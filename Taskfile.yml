@@ -9,7 +9,8 @@ includes:
 vars:
   WAILS3:
     sh: command -v wails3 2>/dev/null || command -v "$HOME/go/bin/wails3" 2>/dev/null
-  APP_NAME: "desktop-application"
+  APP_NAME:
+    sh: ./scripts/sync-app-config.sh print slug
   BIN_DIR: "bin"
   DEV_PORT: '{{.DEV_PORT | default 34115}}'
 

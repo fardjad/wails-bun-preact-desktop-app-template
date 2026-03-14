@@ -1,5 +1,5 @@
 // @ts-expect-error Wails 3 alpha currently generates JS bindings without .d.ts files.
-import * as backend from "../../bindings/desktop-application/app";
+import * as backend from "../../bindings/cross-platform-desktop-app-template/app";
 
 export const Greet = backend.Greet as (name: string) => Promise<string>;
 export const GetSystemInfo = backend.GetSystemInfo as () => Promise<Record<string, string>>;

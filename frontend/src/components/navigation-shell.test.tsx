@@ -2,6 +2,7 @@ import { describe, it, expect, mock } from "bun:test";
 import { fireEvent, render } from "@testing-library/preact";
 import { NavigationShell } from "./navigation-shell";
 import type { Route } from "../app";
+import { appProductName } from "../lib/app-metadata";
 
 function renderShell(route: Route = "/", onNavigate = mock(() => {})) {
   const view = render(
@@ -15,9 +16,7 @@ function renderShell(route: Route = "/", onNavigate = mock(() => {})) {
 describe("NavigationShell", () => {
   it("renders the titlebar with application name", () => {
     const view = renderShell();
-    expect(view.getByText("Desktop Application").textContent).toBe(
-      "Desktop Application"
-    );
+    expect(view.getByText(appProductName).textContent).toBe(appProductName);
   });
 
   it("renders all navigation items", () => {

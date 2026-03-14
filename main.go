@@ -16,8 +16,8 @@ func main() {
 	assetsHandler := application.BundledAssetFileServer(assets)
 
 	app := application.New(application.Options{
-		Name:        "Desktop Application",
-		Description: "A cross-platform desktop application built with Wails, Preact, and TypeScript.",
+		Name:        appProductName,
+		Description: appDescription,
 		Services: []application.Service{
 			application.NewService(backend),
 		},
@@ -39,22 +39,22 @@ func main() {
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 		Windows: application.WindowsOptions{
-			WebviewUserDataPath:               "",
-			WebviewBrowserPath:                "",
+			WebviewUserDataPath: "",
+			WebviewBrowserPath:  "",
 		},
 		Linux: application.LinuxOptions{
-			ProgramName: "desktop-application",
+			ProgramName: appProgramName,
 		},
 	})
 
 	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:     "Desktop Application",
-		Width:     1024,
-		Height:    768,
-		MinWidth:  800,
-		MinHeight: 600,
+		Title:            appProductName,
+		Width:            1024,
+		Height:           768,
+		MinWidth:         800,
+		MinHeight:        600,
 		BackgroundColour: application.NewRGB(255, 255, 255),
-		URL:               "/",
+		URL:              "/",
 		Mac: application.MacWindow{
 			TitleBar: application.MacTitleBar{
 				AppearsTransparent: true,
@@ -64,7 +64,7 @@ func main() {
 			},
 		},
 		Windows: application.WindowsWindow{
-			DisableIcon:                         false,
+			DisableIcon:                       false,
 			DisableFramelessWindowDecorations: false,
 		},
 	})

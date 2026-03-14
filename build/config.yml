@@ -2,12 +2,12 @@ version: '3'
 
 info:
   companyName: "Fardjad Davari"
-  productName: "Desktop Application"
-  productIdentifier: "com.fardjad.desktopapplication"
-  description: "A cross-platform desktop application built with Wails, Preact, and TypeScript."
+  productName: "Cross-platform Desktop App Template"
+  productIdentifier: "com.fardjad.cpdap"
+  description: "A cross-platform desktop application built with Wails, Bun, and Preact."
   copyright: "(c) 2026, Fardjad Davari"
-  comments: "Desktop Application"
-  version: "0.0.0"
+  comments: "Cross-platform Desktop App Template"
+  version: "0.0.1"
 
 dev_mode:
   root_path: .

@@ -3,21 +3,21 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleExecutable</key>
-		<string>desktop-application</string>
+		<string>cross-platform-desktop-app-template</string>
 		<key>CFBundleGetInfoString</key>
-		<string>Desktop Application</string>
+		<string>Cross-platform Desktop App Template</string>
 		<key>CFBundleIconFile</key>
 		<string>icons</string>
 		<key>CFBundleIdentifier</key>
-		<string>com.fardjad.desktopapplication</string>
+		<string>com.fardjad.cpdap</string>
 		<key>CFBundleName</key>
-		<string>Desktop Application</string>
+		<string>Cross-platform Desktop App Template</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
-		<string>0.0.0</string>
+		<string>0.0.1</string>
 		<key>CFBundleVersion</key>
-		<string>0.0.0</string>
+		<string>0.0.1</string>
 		<key>LSMinimumSystemVersion</key>
 		<string>10.15.0</string>
 		<key>NSHighResolutionCapable</key>

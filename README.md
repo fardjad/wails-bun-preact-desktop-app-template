@@ -1,4 +1,4 @@
-# Desktop Application
+# Cross-platform Desktop App Template
 
 Cross-platform desktop application built with [Wails 3 alpha](https://v3.wails.io), Go, [Preact](https://preactjs.com), TypeScript, and Bun.
 
@@ -27,6 +27,16 @@ just dev
 ```
 
 `just dev` runs the Wails 3 dev workflow using [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml). The `justfile` is the source of truth for local commands, and the Wails Taskfile/config delegate back to `just`.
+
+## Renaming
+
+Edit [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml), then run:
+
+```sh
+./scripts/sync-app-config.sh sync
+```
+
+That script treats `build/config.yml` as the source of truth, derives the binary slug from `info.productName`, updates the runtime and frontend metadata, refreshes `go.mod`, regenerates `frontend/bindings/`, updates Wails build assets, and removes unsupported generated build targets that Wails recreates by default.
 
 ## Project Structure
 

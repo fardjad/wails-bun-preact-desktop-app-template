@@ -1,4 +1,4 @@
-# Desktop Application
+# Cross-platform Desktop App Template
 # Thin convenience wrappers around the Wails 3 CLI.
 
 wails3 := `command -v wails3 2>/dev/null || command -v "$HOME/go/bin/wails3" 2>/dev/null`
@@ -96,3 +96,6 @@ package:
 
 wails +args='':
     {{wails3}} {{args}}
+
+sync-app-config:
+    ./scripts/sync-app-config.sh sync

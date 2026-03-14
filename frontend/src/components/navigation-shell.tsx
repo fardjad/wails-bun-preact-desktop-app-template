@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import type { Route } from "../app";
+import { appProductName } from "../lib/app-metadata";
 import "./navigation-shell.css";
 
 const navItems: { path: Route; label: string }[] = [
@@ -42,7 +43,7 @@ export function NavigationShell({ route, onNavigate, children }: Props) {
             />
           </svg>
         </button>
-        <span class="titlebar-text">Desktop Application</span>
+        <span class="titlebar-text">{appProductName}</span>
       </header>
 
       <div class="layout">

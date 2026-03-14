@@ -1,4 +1,4 @@
-module desktop-application
+module cross-platform-desktop-app-template
 
 go 1.26.1
 
