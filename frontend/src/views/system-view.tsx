@@ -2,7 +2,7 @@ import { useState, useEffect } from "preact/hooks";
 import {
   GetSystemInfo as DefaultGetSystemInfo,
   OpenDirectoryDialog as DefaultOpenDirectoryDialog,
-} from "../wailsjs/go/main/App";
+} from "../lib/backend";
 import "./system-view.css";
 
 interface Props {

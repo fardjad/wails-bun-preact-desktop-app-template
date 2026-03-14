@@ -1,0 +1,154 @@
+version: '3'
+
+includes:
+  common: ./build/Taskfile.yml
+  darwin: ./build/darwin/Taskfile.yml
+  linux: ./build/linux/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+
+vars:
+  WAILS3:
+    sh: command -v wails3 2>/dev/null || command -v "$HOME/go/bin/wails3" 2>/dev/null
+  APP_NAME: "desktop-application"
+  BIN_DIR: "bin"
+  DEV_PORT: '{{.DEV_PORT | default 34115}}'
+
+tasks:
+  build:
+    summary: Build the application for the current host platform
+    cmds:
+      - task: "{{OS}}:build"
+
+  package:
+    summary: Package the application for the current host platform
+    cmds:
+      - task: "{{OS}}:package"
+
+  run:
+    summary: Run the application for the current host platform
+    cmds:
+      - task: "{{OS}}:run"
+
+  dev:
+    summary: Run the Wails 3 development workflow
+    cmds:
+      - '{{.WAILS3}} dev -config ./build/config.yml -port {{.DEV_PORT}}'
+
+  generate:bindings:
+    summary: Regenerate frontend bindings
+    cmds:
+      - task: common:generate:bindings
+
+  build:frontend:
+    summary: Build the frontend bundle
+    cmds:
+      - task: common:build:frontend
+
+  setup:docker:
+    summary: Build the Docker image used for Wails cross-platform builds
+    cmds:
+      - task: common:setup:docker
+
+  build:all:
+    summary: Build all supported OS and architecture targets
+    cmds:
+      - task: darwin:build
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-darwin-amd64"
+      - task: darwin:build
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-darwin-arm64"
+      - task: linux:build
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-linux-amd64"
+      - task: linux:build
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-linux-arm64"
+      - task: windows:build
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64.exe"
+      - task: windows:build
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-windows-arm64.exe"
+
+  build:darwin:amd64:
+    summary: Build the macOS amd64 binary
+    cmds:
+      - task: darwin:build
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-darwin-amd64"
+
+  build:darwin:arm64:
+    summary: Build the macOS arm64 binary
+    cmds:
+      - task: darwin:build
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-darwin-arm64"
+
+  build:darwin:universal:
+    summary: Build the universal macOS binary
+    cmds:
+      - task: darwin:build:universal
+
+  build:linux:amd64:
+    summary: Build the Linux amd64 binary
+    cmds:
+      - task: linux:build
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-linux-amd64"
+
+  build:linux:arm64:
+    summary: Build the Linux arm64 binary
+    cmds:
+      - task: linux:build
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-linux-arm64"
+
+  build:windows:amd64:
+    summary: Build the Windows amd64 .exe
+    cmds:
+      - task: windows:build
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64.exe"
+
+  build:windows:arm64:
+    summary: Build the Windows arm64 .exe
+    cmds:
+      - task: windows:build
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-windows-arm64.exe"
+
+  package:darwin:amd64:
+    summary: Package the macOS amd64 app bundle
+    cmds:
+      - task: darwin:package
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-darwin-amd64"
+          BUNDLE_NAME: "{{.APP_NAME}}-darwin-amd64"
+
+  package:darwin:arm64:
+    summary: Package the macOS arm64 app bundle
+    cmds:
+      - task: darwin:package
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-darwin-arm64"
+          BUNDLE_NAME: "{{.APP_NAME}}-darwin-arm64"
+
+  package:darwin:universal:
+    summary: Package the universal macOS app bundle
+    cmds:
+      - task: darwin:package:universal

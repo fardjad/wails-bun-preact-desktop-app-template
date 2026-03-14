@@ -1,13 +1,13 @@
 # Build output
-build/**
-!build/appicon.png
+bin/
+build/bin/
 frontend/dist/
+frontend/bindings/
+frontend/wailsjs/
+.task/
 
 # Dependencies
 frontend/node_modules/
-
-# Wails auto-generated (regenerated on build)
-frontend/wailsjs/
 frontend/package.json.md5
 
 # Go

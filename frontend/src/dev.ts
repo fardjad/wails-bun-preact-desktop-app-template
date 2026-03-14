@@ -1,10 +1,7 @@
 import homepage from "../index.html";
 
 const publicPort = 34115;
-const upstreamPort = 34116;
 const publicHttpOrigin = `http://localhost:${publicPort}`;
-const upstreamHttpOrigin = `http://localhost:${upstreamPort}`;
-const upstreamWsOrigin = `ws://localhost:${upstreamPort}`;
 
 type ProxySocketData = {
   queue: (string | ArrayBuffer | Uint8Array)[];
@@ -89,12 +86,15 @@ function proxyUrlFor(requestUrl: string, targetOrigin: string) {
 }
 
 const upstreamServer = Bun.serve({
-  port: upstreamPort,
+  port: 0,
   development: true,
   routes: {
     "/*": homepage,
   },
 });
+
+const upstreamHttpOrigin = `http://localhost:${upstreamServer.port}`;
+const upstreamWsOrigin = `ws://localhost:${upstreamServer.port}`;
 
 const proxyServer = Bun.serve<ProxySocketData>({
   port: publicPort,

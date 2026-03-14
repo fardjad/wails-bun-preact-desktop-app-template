@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.0.0"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.0.0",
+			"CompanyName": "Fardjad Davari",
+			"FileDescription": "A cross-platform desktop application built with Wails, Preact, and TypeScript.",
+			"LegalCopyright": "(c) 2026, Fardjad Davari",
+			"ProductName": "Desktop Application",
+			"Comments": "Desktop Application"
+		}
+	}
+}

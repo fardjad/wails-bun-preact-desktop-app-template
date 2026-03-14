@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"runtime"
 	"testing"
@@ -12,28 +11,12 @@ func TestNewApp(t *testing.T) {
 	if app == nil {
 		t.Fatal("NewApp() returned nil")
 	}
-	if app.ctx != nil {
-		t.Error("expected ctx to be nil before startup")
+	if app.app != nil {
+		t.Error("expected application reference to be nil before configure")
 	}
-}
-
-func TestStartupStoresContext(t *testing.T) {
-	app := NewApp()
-	ctx := context.Background()
-	app.startup(ctx)
-
-	if app.ctx != ctx {
-		t.Error("startup did not store the provided context")
+	if app.mainWindow != nil {
+		t.Error("expected mainWindow to be nil before configure")
 	}
-}
-
-func TestShutdownDoesNotPanic(t *testing.T) {
-	app := NewApp()
-	ctx := context.Background()
-	app.startup(ctx)
-
-	// shutdown should not panic even with a background context
-	app.shutdown(ctx)
 }
 
 func TestGreet(t *testing.T) {
@@ -103,4 +86,9 @@ func TestGetSystemInfo(t *testing.T) {
 	if info["version"] != runtime.Version() {
 		t.Errorf("version = %q, want %q", info["version"], runtime.Version())
 	}
+}
+
+func TestSetTitleWithoutWindowDoesNotPanic(t *testing.T) {
+	app := NewApp()
+	app.SetTitle("Updated Title")
 }

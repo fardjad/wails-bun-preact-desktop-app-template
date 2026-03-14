@@ -1,43 +1,30 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"runtime"
 
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// App struct represents the application backend.
-// Methods on this struct are exposed to the frontend via Wails bindings.
 type App struct {
-	ctx context.Context
+	app        *application.App
+	mainWindow application.Window
 }
 
-// NewApp creates a new App instance.
 func NewApp() *App {
 	return &App{}
 }
 
-// startup is called when the application starts. The context is stored
-// so that runtime methods can be called from bound methods.
-func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
+func (a *App) configure(app *application.App, mainWindow application.Window) {
+	a.app = app
+	a.mainWindow = mainWindow
 }
 
-// shutdown is called when the application is closing.
-func (a *App) shutdown(ctx context.Context) {
-	// Cleanup logic here
-}
-
-// --- Bound methods (callable from frontend) ---
-
-// Greet returns a greeting for the given name.
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, welcome to your desktop application!", name)
 }
 
-// GetSystemInfo returns basic system information.
 func (a *App) GetSystemInfo() map[string]string {
 	return map[string]string{
 		"os":       runtime.GOOS,
@@ -48,21 +35,24 @@ func (a *App) GetSystemInfo() map[string]string {
 	}
 }
 
-// OpenDirectoryDialog opens a native directory picker and returns the selected path.
 func (a *App) OpenDirectoryDialog(title string) (string, error) {
-	return wailsRuntime.OpenDirectoryDialog(a.ctx, wailsRuntime.OpenDialogOptions{
-		Title: title,
-	})
+	return a.app.Dialog.
+		OpenFile().
+		CanChooseDirectories(true).
+		CanChooseFiles(false).
+		SetTitle(title).
+		PromptForSingleSelection()
 }
 
-// OpenFileDialog opens a native file picker and returns the selected path.
 func (a *App) OpenFileDialog(title string) (string, error) {
-	return wailsRuntime.OpenFileDialog(a.ctx, wailsRuntime.OpenDialogOptions{
-		Title: title,
-	})
+	return a.app.Dialog.
+		OpenFile().
+		SetTitle(title).
+		PromptForSingleSelection()
 }
 
-// SetTitle dynamically sets the window title.
 func (a *App) SetTitle(title string) {
-	wailsRuntime.WindowSetTitle(a.ctx, title)
+	if a.mainWindow != nil {
+		a.mainWindow.SetTitle(title)
+	}
 }

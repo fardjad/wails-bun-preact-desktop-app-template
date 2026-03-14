@@ -2,75 +2,76 @@ package main
 
 import (
 	"embed"
+	"log"
+	"net/http"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/linux"
-	"github.com/wailsapp/wails/v2/pkg/options/mac"
-	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
-	app := NewApp()
+	backend := NewApp()
+	assetsHandler := application.BundledAssetFileServer(assets)
 
-	err := wails.Run(&options.App{
+	app := application.New(application.Options{
+		Name:        "Desktop Application",
+		Description: "A cross-platform desktop application built with Wails, Preact, and TypeScript.",
+		Services: []application.Service{
+			application.NewService(backend),
+		},
+		Assets: application.AssetOptions{
+			Handler: assetsHandler,
+			Middleware: func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+					if req.URL.Path == "/wails/custom.js" {
+						rw.Header().Set("Content-Type", "application/javascript")
+						rw.WriteHeader(http.StatusNoContent)
+						return
+					}
+
+					next.ServeHTTP(rw, req)
+				})
+			},
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		Windows: application.WindowsOptions{
+			WebviewUserDataPath:               "",
+			WebviewBrowserPath:                "",
+		},
+		Linux: application.LinuxOptions{
+			ProgramName: "desktop-application",
+		},
+	})
+
+	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Desktop Application",
 		Width:     1024,
 		Height:    768,
 		MinWidth:  800,
 		MinHeight: 600,
-
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-		},
-
-		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
-
-		OnStartup:  app.startup,
-		OnShutdown: app.shutdown,
-
-		Bind: []interface{}{
-			app,
-		},
-
-		// macOS-specific settings
-		Mac: &mac.Options{
-			TitleBar: &mac.TitleBar{
-				TitlebarAppearsTransparent: true,
-				HideTitle:                  true,
-				HideTitleBar:               false,
-				FullSizeContent:            true,
-				UseToolbar:                 false,
-			},
-			WebviewIsTransparent: false,
-			WindowIsTranslucent:  false,
-			About: &mac.AboutInfo{
-				Title:   "Desktop Application",
-				Message: "A cross-platform desktop application built with Wails, Vue 3, and TypeScript.",
+		BackgroundColour: application.NewRGB(255, 255, 255),
+		URL:               "/",
+		Mac: application.MacWindow{
+			TitleBar: application.MacTitleBar{
+				AppearsTransparent: true,
+				HideTitle:          true,
+				FullSizeContent:    true,
+				UseToolbar:         false,
 			},
 		},
-
-		// Windows-specific settings
-		Windows: &windows.Options{
-			WebviewIsTransparent:              false,
-			WindowIsTranslucent:               false,
-			DisableWindowIcon:                 false,
+		Windows: application.WindowsWindow{
+			DisableIcon:                         false,
 			DisableFramelessWindowDecorations: false,
-			WebviewUserDataPath:               "",
-			WebviewBrowserPath:                "",
-		},
-
-		// Linux-specific settings
-		Linux: &linux.Options{
-			ProgramName: "desktop-application",
 		},
 	})
+	backend.configure(app, mainWindow)
 
+	err := app.Run()
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatal(err)
 	}
 }

@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { Greet as DefaultGreet } from "../wailsjs/go/main/App";
+import { Greet as DefaultGreet } from "../lib/backend";
 import "./home-view.css";
 
 interface Props {
