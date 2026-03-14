@@ -1,0 +1,35 @@
+# Build output
+build/**
+!build/appicon.png
+frontend/dist/
+
+# Dependencies
+frontend/node_modules/
+
+# Wails auto-generated (regenerated on build)
+frontend/wailsjs/
+frontend/package.json.md5
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
