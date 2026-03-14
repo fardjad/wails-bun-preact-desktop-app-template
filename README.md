@@ -8,149 +8,124 @@ Cross-platform desktop application built with [Wails 3 alpha](https://v3.wails.i
 - [Bun](https://bun.sh)
 - [just](https://github.com/casey/just)
 - [Wails 3 CLI](https://v3.wails.io)
+- [Docker](https://www.docker.com/) for Linux cross-builds
+
+Install Wails 3:
 
 ```sh
 go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 ```
 
-Verify the local toolchain:
-
-```sh
-just doctor
-```
-
 ## Quick Start
 
 ```sh
-just install
 just dev
 ```
 
-`just dev` runs the Wails 3 dev workflow using [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml). The `justfile` is the source of truth for local commands, and the Wails Taskfile/config delegate back to `just`.
+That starts Wails dev mode using [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml). Frontend dependencies are installed automatically when needed.
 
-## Renaming
+## Rename The App
 
-Edit [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml), then run:
+[build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml) is the source of truth for the app name and metadata.
+
+After changing it, run:
 
 ```sh
-./scripts/sync-app-config.sh sync
+just sync-app-config
 ```
 
-That script treats `build/config.yml` as the source of truth, derives the binary slug from `info.productName`, updates the runtime and frontend metadata, refreshes `go.mod`, regenerates `frontend/bindings/`, updates Wails build assets, and removes unsupported generated build targets that Wails recreates by default.
+That delegates to [scripts/sync-app-config.sh](/Users/far/Desktop/desktop-application/scripts/sync-app-config.sh), which:
 
-## Project Structure
-
-- Repository root: Go application entrypoint, backend services, `justfile`, `Taskfile.yml`, and module metadata.
-- [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml): Wails 3 project and dev-mode configuration.
-- [Taskfile.yml](/Users/far/Desktop/desktop-application/Taskfile.yml): thin Wails adapter that delegates to `just` recipes.
-- `frontend/`: Bun-managed frontend workspace.
-- `frontend/src/`: Preact application source.
-- `frontend/src/lib/backend.ts`: typed wrapper around generated Wails bindings.
-- `frontend/bindings/`: generated Wails 3 bindings.
-- `build/`: Wails taskfiles, Docker cross-build config, macOS bundle metadata, and Windows binary metadata.
+- derives the binary slug from `info.productName`
+- updates [go.mod](/Users/far/Desktop/desktop-application/go.mod)
+- regenerates [app_metadata.go](/Users/far/Desktop/desktop-application/app_metadata.go)
+- regenerates [frontend/src/lib/app-metadata.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/app-metadata.ts)
+- rewrites frontend binding imports such as [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts)
+- regenerates `frontend/bindings/`
+- refreshes Wails build assets under `build/`
+- removes unsupported generated build targets that Wails recreates by default
 
 ## Commands
 
-Run `just` with no arguments to list recipes.
+Run `just` with no arguments to list the public recipes.
 
-| Command | Description |
-|---|---|
-| `just dev` | Start Wails 3 development mode |
-| `just install` | Install frontend dependencies |
-| `just generate` | Regenerate Wails 3 bindings |
-| `just frontend-build` | Build the frontend bundle after installing deps and regenerating bindings |
-| `just setup-docker` | Build the Docker image used for Linux cross-compilation |
-| `just typecheck` | Run frontend TypeScript checks |
-| `just doctor` | Show installed Go/Bun/Wails/just versions |
-| `just test` | Run Go and frontend tests |
-| `just test-go` | Run Go tests |
-| `just test-go-race` | Run Go tests with the race detector |
-| `just test-frontend` | Run frontend tests |
-| `just test-frontend-watch` | Run frontend tests in watch mode |
-| `just build` | Build the app for the current host platform |
-| `just build-darwin-amd64` | Build the macOS amd64 binary |
-| `just build-darwin-arm64` | Build the macOS arm64 binary |
-| `just build-darwin-universal` | Build the universal macOS binary |
-| `just build-linux-amd64` | Build the Linux amd64 binary |
-| `just build-linux-arm64` | Build the Linux arm64 binary |
-| `just build-windows-amd64` | Build the Windows amd64 `.exe` |
-| `just build-windows-arm64` | Build the Windows arm64 `.exe` |
-| `just build-all` | Build all six supported OS/architecture outputs |
-| `just package` | Package the host macOS `.app` bundle |
-| `just package-darwin-amd64` | Package the macOS amd64 `.app` bundle |
-| `just package-darwin-arm64` | Package the macOS arm64 `.app` bundle |
-| `just package-darwin-universal` | Package the universal macOS `.app` bundle |
-| `just clean` | Remove generated local build artifacts |
+Examples:
 
-Supported outputs in this repo are intentionally limited to:
+```sh
+just wails version
+just wails task --list-all
+just wails task build:darwin:universal
+just wails task package:darwin:universal
+```
+
+## Supported Outputs
+
+This repo intentionally supports a small output surface:
 
 - Windows: `.exe` only
 - Linux: binary only
-- macOS: binary, universal binary, and `.app`
+- macOS: binary and `.app`
+- Architectures: `amd64` and `arm64`
+- macOS universal binary and universal `.app` are available through Wails tasks
 
-Each platform supports `amd64` and `arm64`.
+`just build-all` builds:
 
-## Wails 3 Notes
+- `darwin/amd64`
+- `darwin/arm64`
+- `linux/amd64`
+- `linux/arm64`
+- `windows/amd64`
+- `windows/arm64`
 
-The app now uses Wails 3 services instead of Wails 2 `Bind` plus runtime context hooks.
+For universal macOS outputs, use:
 
-- Backend service registration happens in [main.go](/Users/far/Desktop/desktop-application/main.go#L16).
-- The service methods exposed to the frontend live in [app.go](/Users/far/Desktop/desktop-application/app.go#L10).
-- Generated bindings are emitted to `frontend/bindings/`.
-- Frontend code imports the typed wrapper in [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts#L1) instead of importing generated JS files directly.
-
-Example:
-
-```ts
-import { Greet, GetSystemInfo } from "../lib/backend";
-
-const greeting = await Greet("world");
-const info = await GetSystemInfo();
+```sh
+just wails task build:darwin:universal
+just wails task package:darwin:universal
 ```
 
-## Development Workflow
+## Project Structure
 
-Wails 3 development is configured in [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml#L12), and each step delegates to `just`:
+- [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml): Wails project metadata and dev-mode configuration
+- [Taskfile.yml](/Users/far/Desktop/desktop-application/Taskfile.yml): top-level Wails task entrypoint
+- [justfile](/Users/far/Desktop/desktop-application/justfile): thin local command surface
+- [build/docker/Dockerfile.cross](/Users/far/Desktop/desktop-application/build/docker/Dockerfile.cross): Docker image used for cross-platform builds
+- [build/darwin/version.env](/Users/far/Desktop/desktop-application/build/darwin/version.env): macOS deployment target and SDK version source of truth
+- [app.go](/Users/far/Desktop/desktop-application/app.go): backend service methods exposed to the frontend
+- [main.go](/Users/far/Desktop/desktop-application/main.go): Wails app bootstrap and window setup
+- [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts): typed wrapper around generated Wails bindings
+- [frontend/src/lib/app-metadata.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/app-metadata.ts): generated frontend app metadata
+- `frontend/bindings/`: generated Wails bindings
 
-1. `just generate`
-2. `just frontend-dev`
-3. `just run-app`
+## Development Notes
 
-The frontend remains Bun-only for package management, building, and tests.
+Wails dev mode is configured in [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml). It calls private helper recipes in [justfile](/Users/far/Desktop/desktop-application/justfile) to:
 
-Linux cross-compilation uses Docker via [build/docker/Dockerfile.cross](/Users/far/Desktop/desktop-application/build/docker/Dockerfile.cross). The Linux build recipes will automatically build the `wails-cross` image on first use if it is missing.
+- regenerate bindings
+- start the Bun frontend dev server
+- run the Go app
+
+Linux cross-builds use Docker. If the cross-build images do not exist yet, run:
+
+```sh
+just wails task setup:docker
+```
 
 ## Testing
 
-Go tests live in [app_test.go](/Users/far/Desktop/desktop-application/app_test.go). Frontend tests live under `frontend/src/**/*.test.tsx` and run with `bun test`.
+Go tests live in [app_test.go](/Users/far/Desktop/desktop-application/app_test.go). Frontend tests live under `frontend/src/**/*.test.tsx`.
 
-Validated migration commands:
+Common test commands:
 
 ```sh
-go build ./...
-cd frontend && bun run typecheck
-cd frontend && bun test
-cd frontend && bun run build
-wails3 build
+just test
+just test-go
+just test-frontend
 ```
 
-## Adding a New Backend Method
+## Adding A Backend Method
 
 1. Add an exported method to [app.go](/Users/far/Desktop/desktop-application/app.go).
-2. Run `just generate` or `just dev`.
+2. Run `just dev` or `just wails generate bindings -clean=true`.
 3. Re-export it from [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts).
-4. Import it from the wrapper in your component.
-
-Example:
-
-```go
-func (a *App) MyMethod(arg string) (string, error) {
-	return "result", nil
-}
-```
-
-```ts
-import { MyMethod } from "../lib/backend";
-
-const result = await MyMethod("input");
-```
+4. Import it from the wrapper in your frontend code.
