@@ -1,131 +1,151 @@
 # Cross-platform Desktop App Template
 
-Cross-platform desktop application built with [Wails 3 alpha](https://v3.wails.io), Go, [Preact](https://preactjs.com), TypeScript, and Bun.
+Cross-platform desktop application built with
+[Wails 3 alpha](https://v3alpha.wails.io), Go, [Preact](https://preactjs.com),
+TypeScript, and Bun.
 
 ## Prerequisites
 
 - [Go](https://go.dev/dl/)
 - [Bun](https://bun.sh)
-- [just](https://github.com/casey/just)
-- [Wails 3 CLI](https://v3.wails.io)
-- [Docker](https://www.docker.com/) for Linux cross-builds
+- [Wails 3 CLI](https://v3alpha.wails.io)
 
-Install Wails 3:
+Install the Wails CLI version that matches `go.mod`:
 
 ```sh
-go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
+go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
 ```
+
+On Linux, native builds and tests also need GTK/WebKit development packages.
 
 ## Quick Start
 
-```sh
-just dev
-```
-
-That starts Wails dev mode using [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml). Frontend dependencies are installed automatically when needed.
-
-## Rename The App
-
-[build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml) is the source of truth for the app name and metadata.
-
-After changing it, run:
+Sync generated metadata and build assets:
 
 ```sh
-just sync-app-config
+bun run sync-app-config
 ```
 
-That delegates to [scripts/sync-app-config.sh](/Users/far/Desktop/desktop-application/scripts/sync-app-config.sh), which:
+Start development mode:
 
-- derives the binary slug from `info.productName`
-- updates [go.mod](/Users/far/Desktop/desktop-application/go.mod)
-- regenerates [app_metadata.go](/Users/far/Desktop/desktop-application/app_metadata.go)
-- regenerates [frontend/src/lib/app-metadata.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/app-metadata.ts)
-- rewrites frontend binding imports such as [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts)
-- regenerates `frontend/bindings/`
-- refreshes Wails build assets under `build/`
-- removes unsupported generated build targets that Wails recreates by default
+```sh
+bun run dev
+```
+
+This uses `build/config.yml` as the Wails dev-mode config and runs:
+
+- a debug-friendly native Go build
+- the Bun frontend dev server
+- the compiled desktop binary
+
+During Go-driven dev rebuilds, bindings are regenerated into a temporary
+directory and then swapped into `frontend/bindings/` so the frontend watcher
+does not see half-written generated files.
 
 ## Commands
 
-Run `just` with no arguments to list the public recipes.
-
-Examples:
+Repo-level commands live in the root `package.json` and are driven by Bun:
 
 ```sh
-just wails version
-just wails task --list-all
-just wails task build:darwin:universal
-just wails task package:darwin:universal
+bun run dev
+bun run build
+bun run test
+bun run style-check
+bun run style-fix
+bun run sync-app-config
 ```
 
-## Supported Outputs
+What they do:
 
-This repo intentionally supports a small output surface:
+- `bun run build`: native local build for the current machine
+- `bun run test`: frontend tests, then Go tests
+- `bun run style-check`: non-mutating formatting and lint checks
+- `bun run style-fix`: apply supported formatting fixes
+- `bun run sync-app-config`: regenerate config-derived metadata and Wails build
+  assets
 
-- Windows: `.exe` only
-- Linux: binary only
-- macOS: binary and `.app`
-- Architectures: `amd64` and `arm64`
-- macOS universal binary and universal `.app` are available through Wails tasks
+Git commits also run `bun run style-check` through a Husky pre-commit hook.
 
-`just build-all` builds:
+## Rename The App
 
-- `darwin/amd64`
-- `darwin/arm64`
-- `linux/amd64`
-- `linux/arm64`
-- `windows/amd64`
-- `windows/arm64`
+`build/config.yml` is the source of truth for product metadata.
 
-For universal macOS outputs, use:
+After changing any values under `info`, run:
 
 ```sh
-just wails task build:darwin:universal
-just wails task package:darwin:universal
+bun run sync-app-config
 ```
+
+That sync flow updates:
+
+- `go.mod`
+- `app_metadata.go`
+- `frontend/src/lib/app-metadata.ts`
+- `frontend/package.json`
+- `frontend/index.html`
+- `frontend/src/lib/backend.ts`
+- `build/` metadata assets
+- `build/linux/*.desktop`
+- `frontend/bindings/`
+
+Generated outputs are committed so metadata changes stay reviewable in Git.
+
+## Release Outputs
+
+Release artifacts follow this naming pattern:
+
+```text
+<slug>-<os>-<arch>-<version>
+```
+
+Supported release artifacts:
+
+- Windows: `.exe`
+- Linux: `.AppImage`
+- macOS: `.app.zip`
+- macOS universal: `.app.zip`
+
+Local release examples:
+
+```sh
+bun run release windows amd64
+bun run release linux arm64
+bun run release macos arm64
+```
+
+`bun run release` requires an explicit target and architecture. It does not
+default to the current machine automatically.
+
+Universal macOS packaging combines two native binaries:
+
+```sh
+bun run release macos universal \
+  --amd64-binary build/release/binaries/<slug>-macos-amd64-<version>.bin \
+  --arm64-binary build/release/binaries/<slug>-macos-arm64-<version>.bin
+```
+
+Artifacts and `.sha256` checksum files are written to `build/release/`.
+
+## GitHub Actions
+
+The repo includes:
+
+- `CI`: style checks plus native Linux build/test validation
+- `Release`: version-gated native release jobs that start from a successful `CI`
+  run on `main` and build that same validated commit
+
+Release jobs build each target on a native runner and publish the GitHub release
+only after every required artifact succeeds.
+
+The macOS release flow runs on `macos-latest`. That current arm64 runner builds
+both the `amd64` and `arm64` macOS binaries, then packages the universal app
+from those two binaries on the same runner.
 
 ## Project Structure
 
-- [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml): Wails project metadata and dev-mode configuration
-- [Taskfile.yml](/Users/far/Desktop/desktop-application/Taskfile.yml): top-level Wails task entrypoint
-- [justfile](/Users/far/Desktop/desktop-application/justfile): thin local command surface
-- [build/docker/Dockerfile.cross](/Users/far/Desktop/desktop-application/build/docker/Dockerfile.cross): Docker image used for cross-platform builds
-- [build/darwin/version.env](/Users/far/Desktop/desktop-application/build/darwin/version.env): macOS deployment target and SDK version source of truth
-- [app.go](/Users/far/Desktop/desktop-application/app.go): backend service methods exposed to the frontend
-- [main.go](/Users/far/Desktop/desktop-application/main.go): Wails app bootstrap and window setup
-- [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts): typed wrapper around generated Wails bindings
-- [frontend/src/lib/app-metadata.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/app-metadata.ts): generated frontend app metadata
+- `build/config.yml`: canonical product metadata and Wails dev-mode config
+- `scripts/`: Bun-based helper scripts for sync, build, test, style, and release
+- `build/`: generated Wails metadata assets plus Linux AppImage packaging files
+- `frontend/`: Bun-powered frontend app
 - `frontend/bindings/`: generated Wails bindings
-
-## Development Notes
-
-Wails dev mode is configured in [build/config.yml](/Users/far/Desktop/desktop-application/build/config.yml). It calls private helper recipes in [justfile](/Users/far/Desktop/desktop-application/justfile) to:
-
-- regenerate bindings
-- start the Bun frontend dev server
-- run the Go app
-
-Linux cross-builds use Docker. If the cross-build images do not exist yet, run:
-
-```sh
-just wails task setup:docker
-```
-
-## Testing
-
-Go tests live in [app_test.go](/Users/far/Desktop/desktop-application/app_test.go). Frontend tests live under `frontend/src/**/*.test.tsx`.
-
-Common test commands:
-
-```sh
-just test
-just test-go
-just test-frontend
-```
-
-## Adding A Backend Method
-
-1. Add an exported method to [app.go](/Users/far/Desktop/desktop-application/app.go).
-2. Run `just dev` or `just wails generate bindings -clean=true`.
-3. Re-export it from [frontend/src/lib/backend.ts](/Users/far/Desktop/desktop-application/frontend/src/lib/backend.ts).
-4. Import it from the wrapper in your frontend code.

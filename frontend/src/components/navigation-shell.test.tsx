@@ -76,18 +76,20 @@ describe("NavigationShell", () => {
 
   it("toggle button title reflects sidebar state", () => {
     const view = renderShell();
-    const btn = view.getByRole("button", { name: "Collapse sidebar" }) as HTMLElement;
+    const btn = view.getByRole("button", {
+      name: "Collapse sidebar",
+    }) as HTMLElement;
     expect(btn.title).toBe("Collapse sidebar");
 
     fireEvent.click(btn);
-    expect(view.getByRole("button", { name: "Expand sidebar" }).title).toBe("Expand sidebar");
+    expect(view.getByRole("button", { name: "Expand sidebar" }).title).toBe(
+      "Expand sidebar",
+    );
   });
 
   it("renders children in the content area", () => {
     const view = renderShell();
-    expect(view.getByText("Page content").textContent).toBe(
-      "Page content"
-    );
+    expect(view.getByText("Page content").textContent).toBe("Page content");
   });
 
   it("has a draggable titlebar region", () => {
@@ -98,7 +100,9 @@ describe("NavigationShell", () => {
 
   it("has a non-draggable toggle button", () => {
     const view = renderShell();
-    const btn = view.getByRole("button", { name: "Collapse sidebar" }) as HTMLElement;
+    const btn = view.getByRole("button", {
+      name: "Collapse sidebar",
+    }) as HTMLElement;
     expect(btn.style.cssText).toContain("--wails-draggable: no-drag");
   });
 });

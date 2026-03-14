@@ -99,17 +99,21 @@ const upstreamWsOrigin = `ws://localhost:${upstreamServer.port}`;
 const proxyServer = Bun.serve<ProxySocketData>({
   port: publicPort,
   async fetch(request, server) {
-    if (server.upgrade(request, {
-      data: {
-        queue: [],
-        upstream: null,
-        upstreamUrl: proxyUrlFor(request.url, upstreamWsOrigin),
-      },
-    })) {
+    if (
+      server.upgrade(request, {
+        data: {
+          queue: [],
+          upstream: null,
+          upstreamUrl: proxyUrlFor(request.url, upstreamWsOrigin),
+        },
+      })
+    ) {
       return;
     }
 
-    const upstreamResponse = await fetch(new Request(proxyUrlFor(request.url, upstreamHttpOrigin), request));
+    const upstreamResponse = await fetch(
+      new Request(proxyUrlFor(request.url, upstreamHttpOrigin), request),
+    );
     const contentType = upstreamResponse.headers.get("content-type") ?? "";
     const url = new URL(request.url);
 
@@ -190,4 +194,6 @@ const proxyServer = Bun.serve<ProxySocketData>({
 });
 
 console.log(`Dev proxy running at http://localhost:${proxyServer.port}`);
-console.log(`Upstream Bun server running at http://localhost:${upstreamServer.port}`);
+console.log(
+  `Upstream Bun server running at http://localhost:${upstreamServer.port}`,
+);

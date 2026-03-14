@@ -1,0 +1,255 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  prepare:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    outputs:
+      should_release: ${{ steps.meta.outputs.should_release }}
+      version: ${{ steps.meta.outputs.version }}
+      slug: ${{ steps.meta.outputs.slug }}
+      tag: ${{ steps.meta.outputs.tag }}
+      source_sha: ${{ steps.meta.outputs.source_sha }}
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: oven-sh/setup-bun@main
+        with:
+          bun-version-file: ".bun-version"
+
+      - name: Confirm CI succeeded for this commit
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          CI_CONCLUSION="$(gh api \
+            "/repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${SOURCE_SHA}&status=completed&event=push" \
+            --jq '.workflow_runs[] | select(.name=="CI") | .conclusion' | head -n 1)"
+
+          if [ "$CI_CONCLUSION" != "success" ]; then
+            echo "Expected a successful CI run for ${SOURCE_SHA}, found '${CI_CONCLUSION:-none}'." >&2
+            exit 1
+          fi
+
+      - id: meta
+        name: Determine release metadata
+        env:
+          SOURCE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+        shell: bash
+        run: |
+          git fetch --tags --force
+          VERSION="$(bun run scripts/metadata.ts version)"
+          SLUG="$(bun run scripts/metadata.ts slug)"
+          TAG="v${VERSION}"
+          LATEST_TAG="$(git tag --sort=-v:refname | head -n 1 || true)"
+
+          if [ "$LATEST_TAG" = "$TAG" ]; then
+            SHOULD_RELEASE=false
+          else
+            SHOULD_RELEASE=true
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "should_release=$SHOULD_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
+  release-target:
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            os: windows
+            arch: amd64
+            extension: exe
+          - runner: windows-11-arm
+            os: windows
+            arch: arm64
+            extension: exe
+          - runner: ubuntu-24.04
+            os: linux
+            arch: amd64
+            extension: AppImage
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+            extension: AppImage
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      - uses: oven-sh/setup-bun@main
+        with:
+          bun-version-file: ".bun-version"
+
+      - uses: actions/setup-go@main
+        with:
+          go-version-file: go.mod
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libfuse2t64 \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf \
+            pkg-config
+
+      - name: Install Wails CLI
+        shell: bash
+        run: |
+          WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
+          go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
+
+      - name: Sync generated metadata
+        shell: bash
+        run: bun run sync-app-config
+
+      - name: Run native tests
+        shell: bash
+        run: bun run test
+
+      - name: Build release artifact
+        shell: bash
+        run: bun run release ${{ matrix.os }} ${{ matrix.arch }}
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: artifact-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            build/release/${{ needs.prepare.outputs.slug }}-${{ matrix.os }}-${{ matrix.arch }}-${{ needs.prepare.outputs.version }}.${{ matrix.extension }}
+            build/release/${{ needs.prepare.outputs.slug }}-${{ matrix.os }}-${{ matrix.arch }}-${{ needs.prepare.outputs.version }}.${{ matrix.extension }}.sha256
+
+  release-macos:
+    needs:
+      - prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      - uses: oven-sh/setup-bun@main
+        with:
+          bun-version-file: ".bun-version"
+
+      - uses: actions/setup-go@main
+        with:
+          go-version-file: go.mod
+
+      - name: Install Wails CLI
+        shell: bash
+        run: |
+          WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
+          go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
+
+      - name: Sync generated metadata
+        shell: bash
+        run: bun run sync-app-config
+
+      - name: Run native tests
+        shell: bash
+        run: bun run test
+
+      - name: Build amd64 macOS artifact
+        shell: bash
+        run: bun run release macos amd64
+
+      - name: Build arm64 macOS artifact
+        shell: bash
+        run: bun run release macos arm64
+
+      - name: Package universal macOS app
+        shell: bash
+        run: |
+          bun run release macos universal \
+            --amd64-binary build/release/binaries/${{ needs.prepare.outputs.slug }}-macos-amd64-${{ needs.prepare.outputs.version }}.bin \
+            --arm64-binary build/release/binaries/${{ needs.prepare.outputs.slug }}-macos-arm64-${{ needs.prepare.outputs.version }}.bin
+
+      - name: Upload amd64 macOS artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: artifact-macos-amd64
+          path: |
+            build/release/${{ needs.prepare.outputs.slug }}-macos-amd64-${{ needs.prepare.outputs.version }}.app.zip
+            build/release/${{ needs.prepare.outputs.slug }}-macos-amd64-${{ needs.prepare.outputs.version }}.app.zip.sha256
+
+      - name: Upload arm64 macOS artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: artifact-macos-arm64
+          path: |
+            build/release/${{ needs.prepare.outputs.slug }}-macos-arm64-${{ needs.prepare.outputs.version }}.app.zip
+            build/release/${{ needs.prepare.outputs.slug }}-macos-arm64-${{ needs.prepare.outputs.version }}.app.zip.sha256
+
+      - name: Upload universal macOS artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: artifact-macos-universal
+          path: |
+            build/release/${{ needs.prepare.outputs.slug }}-macos-universal-${{ needs.prepare.outputs.version }}.app.zip
+            build/release/${{ needs.prepare.outputs.slug }}-macos-universal-${{ needs.prepare.outputs.version }}.app.zip.sha256
+
+  publish:
+    needs:
+      - prepare
+      - release-target
+      - release-macos
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/download-artifact@main
+        with:
+          path: dist
+          pattern: artifact-*
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view "${{ needs.prepare.outputs.tag }}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${{ needs.prepare.outputs.tag }} already exists."
+            exit 1
+          fi
+
+          gh release create "${{ needs.prepare.outputs.tag }}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${{ needs.prepare.outputs.tag }}" \
+            --generate-notes

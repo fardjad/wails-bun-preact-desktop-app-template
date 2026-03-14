@@ -1,7 +1,7 @@
 {
-  "name": "desktop-application-frontend",
+  "name": "cross-platform-desktop-app-template-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "bun run src/dev.ts",
@@ -12,15 +12,15 @@
   },
   "dependencies": {
     "@wailsio/runtime": "latest",
-    "preact": "^10.25.0",
-    "preact-router": "^4.1.0"
+    "preact": "^10.29.0",
+    "preact-router": "^4.1.2"
   },
   "devDependencies": {
-    "@happy-dom/global-registrator": "^17.4.0",
+    "@happy-dom/global-registrator": "^17.6.3",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/preact": "^3.2.4",
     "@testing-library/user-event": "^14.6.1",
-    "bun-types": "^1.3.10",
-    "typescript": "~5.7.0"
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
   }
 }

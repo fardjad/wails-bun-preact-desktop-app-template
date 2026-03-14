@@ -48,10 +48,7 @@ export function NavigationShell({ route, onNavigate, children }: Props) {
 
       <div class="layout">
         {/* Sidebar navigation */}
-        <nav
-          class="sidebar"
-          style={{ width: collapsed ? "52px" : "200px" }}
-        >
+        <nav class="sidebar" style={{ width: collapsed ? "52px" : "200px" }}>
           {navItems.map((item) => (
             <a
               key={item.path}

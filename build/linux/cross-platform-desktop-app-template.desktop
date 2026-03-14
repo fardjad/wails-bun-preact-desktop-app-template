@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=cross-platform-desktop-app-template
+Exec=cross-platform-desktop-app-template
+Icon=cross-platform-desktop-app-template
+Categories=Utility;
+Comment=A cross-platform desktop application built with Wails, Bun, and Preact.
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false

@@ -8,7 +8,10 @@ type ConsoleCalls = Partial<Record<ConsoleMethodName, unknown[][]>>;
 
 export function mockConsole(methods: ConsoleMethodName[] = ["error"]) {
   const calls: ConsoleCalls = {};
-  const originals = new Map<ConsoleMethodName, (...args: unknown[]) => unknown>();
+  const originals = new Map<
+    ConsoleMethodName,
+    (...args: unknown[]) => unknown
+  >();
   const consoleMethods = console as unknown as Record<
     ConsoleMethodName,
     (...args: unknown[]) => unknown

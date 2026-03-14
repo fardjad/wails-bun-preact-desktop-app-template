@@ -6,13 +6,16 @@ describe("HomeView", () => {
   it("renders the welcome heading", () => {
     const greet = mock(() => Promise.resolve(""));
     const view = render(<HomeView greet={greet} />);
-    expect(view.getByRole("heading", { name: "Welcome" }).textContent).toBe("Welcome");
+    expect(view.getByRole("heading", { name: "Welcome" }).textContent).toBe(
+      "Welcome",
+    );
   });
 
   it("renders the subtitle", () => {
     const greet = mock(() => Promise.resolve(""));
     const view = render(<HomeView greet={greet} />);
-    const text = view.getByText(/cross-platform desktop application/i).textContent ?? "";
+    const text =
+      view.getByText(/cross-platform desktop application/i).textContent ?? "";
     expect(text).toInclude("cross-platform desktop application");
   });
 
@@ -20,7 +23,9 @@ describe("HomeView", () => {
     const greet = mock(() => Promise.resolve(""));
     const view = render(<HomeView greet={greet} />);
     expect(view.getByPlaceholderText("Enter your name")).toBeTruthy();
-    expect(view.getByRole("button", { name: "Greet" }).textContent).toBe("Greet");
+    expect(view.getByRole("button", { name: "Greet" }).textContent).toBe(
+      "Greet",
+    );
   });
 
   it("does not show greeting result initially", () => {
@@ -31,7 +36,7 @@ describe("HomeView", () => {
 
   it("calls greet and displays result on button click", async () => {
     const greet = mock(() =>
-      Promise.resolve("Hello Alice, welcome to your desktop application!")
+      Promise.resolve("Hello Alice, welcome to your desktop application!"),
     );
     const view = render(<HomeView greet={greet} />);
 
@@ -41,15 +46,16 @@ describe("HomeView", () => {
 
     await waitFor(() => {
       expect(greet).toHaveBeenCalledWith("Alice");
-      expect(view.getByText("Hello Alice, welcome to your desktop application!").textContent).toBe(
-        "Hello Alice, welcome to your desktop application!"
-      );
+      expect(
+        view.getByText("Hello Alice, welcome to your desktop application!")
+          .textContent,
+      ).toBe("Hello Alice, welcome to your desktop application!");
     });
   });
 
   it("calls greet on enter key", async () => {
     const greet = mock(() =>
-      Promise.resolve("Hello Bob, welcome to your desktop application!")
+      Promise.resolve("Hello Bob, welcome to your desktop application!"),
     );
     const view = render(<HomeView greet={greet} />);
 
