@@ -3,6 +3,7 @@ import { fireEvent, render } from "@testing-library/preact";
 import { NavigationShell } from "./navigation-shell";
 import type { Route } from "../app";
 import { appProductName } from "../lib/app-metadata";
+import { withWailsOS } from "../test-support/wails-env";
 
 function renderShell(route: Route = "/", onNavigate = mock(() => {})) {
   const view = render(
@@ -14,9 +15,18 @@ function renderShell(route: Route = "/", onNavigate = mock(() => {})) {
 }
 
 describe("NavigationShell", () => {
-  it("renders the titlebar with application name", () => {
-    const view = renderShell();
-    expect(view.getByText(appProductName).textContent).toBe(appProductName);
+  it("renders the titlebar application name on macOS", () => {
+    withWailsOS("darwin", () => {
+      const view = renderShell();
+      expect(view.getByText(appProductName).textContent).toBe(appProductName);
+    });
+  });
+
+  it("does not render a duplicate titlebar application name on Windows", () => {
+    withWailsOS("windows", () => {
+      const view = renderShell();
+      expect(view.queryByText(appProductName)).toBeNull();
+    });
   });
 
   it("renders all navigation items", () => {
@@ -104,5 +114,19 @@ describe("NavigationShell", () => {
       name: "Collapse sidebar",
     }) as HTMLElement;
     expect(btn.style.cssText).toContain("--wails-draggable: no-drag");
+  });
+
+  it("only applies the traffic-light inset on macOS", () => {
+    withWailsOS("darwin", () => {
+      const { container } = renderShell();
+      const titlebar = container.querySelector(".titlebar") as HTMLElement;
+      expect(titlebar.classList.contains("titlebar--macos")).toBe(true);
+    });
+
+    withWailsOS("windows", () => {
+      const { container } = renderShell();
+      const titlebar = container.querySelector(".titlebar") as HTMLElement;
+      expect(titlebar.classList.contains("titlebar--macos")).toBe(false);
+    });
   });
 });
