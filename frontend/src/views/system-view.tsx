@@ -1,28 +1,33 @@
 import { useState, useEffect } from "preact/hooks";
-import {
-  GetSystemInfo as DefaultGetSystemInfo,
-  OpenDirectoryDialog as DefaultOpenDirectoryDialog,
-} from "../lib/backend";
+import { GetSystemInfo as DefaultGetSystemInfo } from "../../bindings/cross-platform-desktop-app-template/systemservice";
+import { OpenDirectoryDialog as DefaultOpenDirectoryDialog } from "../../bindings/cross-platform-desktop-app-template/desktopservice";
 import "./system-view.css";
 
 interface Props {
-  getSystemInfo?: () => Promise<Record<string, string>>;
-  openDirectoryDialog?: (title: string) => Promise<string>;
+  getSystemInfo?: () => PromiseLike<Record<string, string | undefined>>;
+  openDirectoryDialog?: (title: string) => PromiseLike<string>;
 }
 
 export function SystemView({
   getSystemInfo = DefaultGetSystemInfo,
   openDirectoryDialog = DefaultOpenDirectoryDialog,
 }: Props) {
-  const [systemInfo, setSystemInfo] = useState<Record<string, string>>({});
+  const [systemInfo, setSystemInfo] = useState<
+    Record<string, string | undefined>
+  >({});
   const [selectedDir, setSelectedDir] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSystemInfo()
-      .then((info) => setSystemInfo(info))
-      .catch((e) => console.error("Failed to get system info:", e))
-      .finally(() => setLoading(false));
+    void (async () => {
+      try {
+        setSystemInfo(await getSystemInfo());
+      } catch (e) {
+        console.error("Failed to get system info:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   async function pickDirectory() {

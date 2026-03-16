@@ -1,9 +1,9 @@
 import { useState } from "preact/hooks";
-import { Greet as DefaultGreet } from "../lib/backend";
+import { Greet as DefaultGreet } from "../../bindings/cross-platform-desktop-app-template/greetservice";
 import "./home-view.css";
 
 interface Props {
-  greet?: (name: string) => Promise<string>;
+  greet?: (name: string) => PromiseLike<string>;
 }
 
 export function HomeView({ greet = DefaultGreet }: Props) {

@@ -12,14 +12,18 @@ import (
 var assets embed.FS
 
 func main() {
-	backend := NewApp()
+	greetService := NewGreetService()
+	systemService := NewSystemService()
+	desktopService := NewDesktopService()
 	assetsHandler := application.BundledAssetFileServer(assets)
 
 	app := application.New(application.Options{
 		Name:        appProductName,
 		Description: appDescription,
 		Services: []application.Service{
-			application.NewService(backend),
+			application.NewService(greetService),
+			application.NewService(systemService),
+			application.NewService(desktopService),
 		},
 		Assets: application.AssetOptions{
 			Handler: assetsHandler,
@@ -68,7 +72,7 @@ func main() {
 			DisableFramelessWindowDecorations: false,
 		},
 	})
-	backend.configure(app, mainWindow)
+	desktopService.configure(app, mainWindow)
 
 	err := app.Run()
 	if err != nil {

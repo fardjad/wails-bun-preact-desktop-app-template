@@ -7,7 +7,6 @@ import {
   ensureAppIconExists,
   ensureBuildAssetsPresent,
   ensureFrontendDependencies,
-  frontendBackendPath,
   frontendIndexHtmlPath,
   frontendMetadataPath,
   frontendPackageJsonPath,
@@ -108,17 +107,6 @@ async function syncFrontendIndexHtml(
   await writeTextIfChanged(frontendIndexHtmlPath, next);
 }
 
-async function syncFrontendBindingsImport(
-  config: Awaited<ReturnType<typeof loadProjectConfig>>,
-) {
-  const backendSource = await Bun.file(frontendBackendPath).text();
-  const next = backendSource.replace(
-    /"\.\.\/\.\.\/bindings\/[^/]+\/app(\.js)?"/,
-    `"../../bindings/${config.slug}/app"`,
-  );
-  await writeTextIfChanged(frontendBackendPath, next);
-}
-
 async function updateBuildAssets(
   config: Awaited<ReturnType<typeof loadProjectConfig>>,
 ) {
@@ -175,7 +163,6 @@ await writeTextIfChanged(
   buildFrontendMetadataFile(config),
 );
 await syncFrontendIndexHtml(config);
-await syncFrontendBindingsImport(config);
 await ensureFrontendDependencies();
 await updateBuildAssets(config);
 await pruneUnsupportedGeneratedFiles();

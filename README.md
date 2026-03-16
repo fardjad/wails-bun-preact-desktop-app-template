@@ -84,7 +84,6 @@ That sync flow updates:
 - `frontend/src/lib/app-metadata.ts`
 - `frontend/package.json`
 - `frontend/index.html`
-- `frontend/src/lib/backend.ts`
 - `build/` metadata assets
 - `build/linux/*.desktop`
 - `frontend/bindings/`

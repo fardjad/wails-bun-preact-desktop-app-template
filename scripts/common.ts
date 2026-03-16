@@ -44,12 +44,6 @@ export const frontendMetadataPath = path.join(
   "lib",
   "app-metadata.ts",
 );
-export const frontendBackendPath = path.join(
-  frontendDir,
-  "src",
-  "lib",
-  "backend.ts",
-);
 export const frontendBindingsDir = path.join(frontendDir, "bindings");
 export const goModPath = path.join(repoRoot, "go.mod");
 export const goMetadataPath = path.join(repoRoot, "app_metadata.go");
@@ -168,7 +162,10 @@ async function collectRelativeFiles(rootPath: string): Promise<string[]> {
 async function formatGeneratedBindings(rootPath: string) {
   const files = (await collectRelativeFiles(rootPath))
     .filter(
-      (filePath) => filePath.endsWith(".js") || filePath.endsWith(".d.ts"),
+      (filePath) =>
+        filePath.endsWith(".js") ||
+        filePath.endsWith(".ts") ||
+        filePath.endsWith(".d.ts"),
     )
     .map((filePath) => path.join(rootPath, filePath));
 
@@ -176,7 +173,22 @@ async function formatGeneratedBindings(rootPath: string) {
     return;
   }
 
-  await $`bunx dprint fmt ${files}`.cwd(repoRoot);
+  await $`bunx dprint fmt --allow-no-files ${files}`.cwd(repoRoot);
+}
+
+async function disableTypecheckingForGeneratedBindings(rootPath: string) {
+  const files = (await collectRelativeFiles(rootPath))
+    .filter((filePath) => filePath.endsWith(".ts"))
+    .map((filePath) => path.join(rootPath, filePath));
+
+  for (const filePath of files) {
+    const content = await Bun.file(filePath).text();
+    if (content.startsWith("// @ts-nocheck\n")) {
+      continue;
+    }
+
+    await Bun.write(filePath, `// @ts-nocheck\n${content}`);
+  }
 }
 
 async function replaceFile(targetPath: string, sourcePath: string) {
@@ -334,16 +346,17 @@ export async function generateBindings(
   await removeIfExists(tempBindingsDir);
 
   if (mode === "release") {
-    await $`wails3 generate bindings -d ${tempBindingsDir} -clean=${String(clean)} -f "-tags production"`.cwd(
+    await $`wails3 generate bindings -ts -d ${tempBindingsDir} -clean=${String(clean)} -f "-tags production"`.cwd(
       repoRoot,
     );
   } else {
-    await $`wails3 generate bindings -d ${tempBindingsDir} -clean=${String(clean)}`.cwd(
+    await $`wails3 generate bindings -ts -d ${tempBindingsDir} -clean=${String(clean)}`.cwd(
       repoRoot,
     );
   }
 
   await formatGeneratedBindings(tempBindingsDir);
+  await disableTypecheckingForGeneratedBindings(tempBindingsDir);
   await syncGeneratedBindings(tempBindingsDir, frontendBindingsDir);
   await removeIfExists(tempBindingsDir);
 }
