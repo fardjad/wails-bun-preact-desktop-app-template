@@ -57,9 +57,9 @@ func main() {
 		URL:              "/",
 		Mac: application.MacWindow{
 			TitleBar: application.MacTitleBar{
-				AppearsTransparent: true,
-				HideTitle:          true,
-				FullSizeContent:    true,
+				AppearsTransparent: false,
+				HideTitle:          false,
+				FullSizeContent:    false,
 				UseToolbar:         false,
 			},
 		},

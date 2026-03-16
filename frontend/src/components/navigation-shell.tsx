@@ -1,8 +1,6 @@
 import { useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
-import { System } from "@wailsio/runtime";
 import type { Route } from "../app";
-import { appProductName } from "../lib/app-metadata";
 import "./navigation-shell.css";
 
 const navItems: { path: Route; label: string }[] = [
@@ -18,18 +16,12 @@ interface Props {
 
 export function NavigationShell({ route, onNavigate, children }: Props) {
   const [collapsed, setCollapsed] = useState(false);
-  const isMac = System.IsMac();
 
   return (
     <div class="shell">
-      {/* Titlebar drag region (macOS traffic lights sit here) */}
-      <header
-        class={`titlebar${isMac ? " titlebar--macos" : ""}`}
-        style="--wails-draggable: drag"
-      >
+      <header class="titlebar">
         <button
           class="sidebar-toggle"
-          style="--wails-draggable: no-drag"
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -48,7 +40,6 @@ export function NavigationShell({ route, onNavigate, children }: Props) {
             />
           </svg>
         </button>
-        {isMac ? <span class="titlebar-text">{appProductName}</span> : null}
       </header>
 
       <div class="layout">

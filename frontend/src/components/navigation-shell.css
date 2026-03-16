@@ -17,16 +17,6 @@
   gap: 8px;
 }
 
-.titlebar--macos {
-  padding-left: 78px; /* Space for macOS traffic lights */
-}
-
-.titlebar-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
 .sidebar-toggle {
   display: flex;
   align-items: center;
