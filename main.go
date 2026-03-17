@@ -51,7 +51,7 @@ func main() {
 		},
 	})
 
-	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
+	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            appProductName,
 		Width:            1024,
 		Height:           768,
@@ -72,7 +72,6 @@ func main() {
 			DisableFramelessWindowDecorations: false,
 		},
 	})
-	desktopService.configure(app, mainWindow)
 
 	err := app.Run()
 	if err != nil {

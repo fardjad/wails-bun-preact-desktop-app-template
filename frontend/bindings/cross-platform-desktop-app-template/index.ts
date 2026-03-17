@@ -6,3 +6,5 @@ import * as DesktopService from "./desktopservice.js";
 import * as GreetService from "./greetservice.js";
 import * as SystemService from "./systemservice.js";
 export { DesktopService, GreetService, SystemService };
+
+export { SystemInfo } from "./models.js";

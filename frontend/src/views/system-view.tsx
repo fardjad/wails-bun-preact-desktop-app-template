@@ -3,8 +3,16 @@ import { GetSystemInfo as DefaultGetSystemInfo } from "../../bindings/cross-plat
 import { OpenDirectoryDialog as DefaultOpenDirectoryDialog } from "../../bindings/cross-platform-desktop-app-template/desktopservice";
 import "./system-view.css";
 
+export interface SystemInfo {
+  os: string;
+  arch: string;
+  compiler: string;
+  cpus: number;
+  version: string;
+}
+
 interface Props {
-  getSystemInfo?: () => PromiseLike<Record<string, string | undefined>>;
+  getSystemInfo?: () => PromiseLike<SystemInfo>;
   openDirectoryDialog?: (title: string) => PromiseLike<string>;
 }
 
@@ -12,9 +20,7 @@ export function SystemView({
   getSystemInfo = DefaultGetSystemInfo,
   openDirectoryDialog = DefaultOpenDirectoryDialog,
 }: Props) {
-  const [systemInfo, setSystemInfo] = useState<
-    Record<string, string | undefined>
-  >({});
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [selectedDir, setSelectedDir] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -48,10 +54,10 @@ export function SystemView({
         <div class="loading">Loading system info...</div>
       ) : (
         <div class="info-grid">
-          {Object.entries(systemInfo).map(([key, value]) => (
+          {Object.entries(systemInfo ?? {}).map(([key, value]) => (
             <div key={key} class="info-card">
               <span class="info-label">{key}</span>
-              <span class="info-value">{value}</span>
+              <span class="info-value">{String(value)}</span>
             </div>
           ))}
         </div>

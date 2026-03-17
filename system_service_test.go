@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 )
@@ -17,27 +16,19 @@ func TestGetSystemInfo(t *testing.T) {
 	service := NewSystemService()
 	info := service.GetSystemInfo()
 
-	requiredKeys := []string{"os", "arch", "compiler", "cpus", "version"}
-	for _, key := range requiredKeys {
-		if _, ok := info[key]; !ok {
-			t.Errorf("GetSystemInfo() missing key %q", key)
-		}
+	if info.OS != runtime.GOOS {
+		t.Errorf("OS = %q, want %q", info.OS, runtime.GOOS)
 	}
-
-	if info["os"] != runtime.GOOS {
-		t.Errorf("os = %q, want %q", info["os"], runtime.GOOS)
+	if info.Arch != runtime.GOARCH {
+		t.Errorf("Arch = %q, want %q", info.Arch, runtime.GOARCH)
 	}
-	if info["arch"] != runtime.GOARCH {
-		t.Errorf("arch = %q, want %q", info["arch"], runtime.GOARCH)
+	if info.Compiler != runtime.Compiler {
+		t.Errorf("Compiler = %q, want %q", info.Compiler, runtime.Compiler)
 	}
-	if info["compiler"] != runtime.Compiler {
-		t.Errorf("compiler = %q, want %q", info["compiler"], runtime.Compiler)
+	if info.CPUs != runtime.NumCPU() {
+		t.Errorf("CPUs = %d, want %d", info.CPUs, runtime.NumCPU())
 	}
-	expectedCPUs := fmt.Sprintf("%d", runtime.NumCPU())
-	if info["cpus"] != expectedCPUs {
-		t.Errorf("cpus = %q, want %q", info["cpus"], expectedCPUs)
-	}
-	if info["version"] != runtime.Version() {
-		t.Errorf("version = %q, want %q", info["version"], runtime.Version())
+	if info.Version != runtime.Version() {
+		t.Errorf("Version = %q, want %q", info.Version, runtime.Version())
 	}
 }

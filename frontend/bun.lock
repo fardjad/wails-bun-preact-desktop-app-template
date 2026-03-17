@@ -5,7 +5,7 @@
     "": {
       "name": "desktop-application-frontend",
       "dependencies": {
-        "@wailsio/runtime": "latest",
+        "@wailsio/runtime": "3.0.0-alpha.74",
         "preact": "^10.29.0",
         "preact-router": "^4.1.2",
       },
@@ -40,7 +40,7 @@
 
     "@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 
-    "@wailsio/runtime": ["@wailsio/runtime@3.0.0-alpha.79", "", {}, "sha512-NITzxKmJsMEruc39L166lbPJVECxzcbdqpHVqOOF7Cu/7Zqk/e3B/gNpkUjhNyo5rVb3V1wpS8oEgLUmpu1cwA=="],
+    "@wailsio/runtime": ["@wailsio/runtime@3.0.0-alpha.74", "", {}, "sha512-6N3F6MpLDgLfTRIwgwAzxSrIVtlPICxMYDrs0bz5uUJ58IPCQjcqxWOedoMysFdqVaogi5VmCxXLKRJzI5hW2A=="],
 
     "ansi-regex": ["ansi-regex@5.0.1", "", {}, "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ=="],
 

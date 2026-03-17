@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
+)
 
 func TestNewDesktopService(t *testing.T) {
 	service := NewDesktopService()
@@ -8,10 +12,25 @@ func TestNewDesktopService(t *testing.T) {
 		t.Fatal("NewDesktopService() returned nil")
 	}
 	if service.app != nil {
-		t.Error("expected application reference to be nil before Configure")
+		t.Error("expected application reference to be nil before startup")
 	}
 	if service.mainWindow != nil {
-		t.Error("expected mainWindow to be nil before Configure")
+		t.Error("expected mainWindow to be nil before startup")
+	}
+}
+
+func TestDesktopServiceShutdownClearsReferences(t *testing.T) {
+	service := NewDesktopService()
+	service.app = &application.App{}
+
+	if err := service.ServiceShutdown(); err != nil {
+		t.Fatalf("ServiceShutdown() error = %v, want nil", err)
+	}
+	if service.app != nil {
+		t.Error("expected application reference to be nil after shutdown")
+	}
+	if service.mainWindow != nil {
+		t.Error("expected mainWindow to be nil after shutdown")
 	}
 }
 
@@ -41,5 +60,17 @@ func TestOpenFileDialogWithoutAppReturnsError(t *testing.T) {
 
 func TestSetTitleWithoutWindowDoesNotPanic(t *testing.T) {
 	service := NewDesktopService()
-	service.SetTitle("Updated Title")
+	err := service.SetTitle("Updated Title")
+	if err != errDesktopServiceNotConfigured {
+		t.Fatalf("SetTitle() error = %v, want %v", err, errDesktopServiceNotConfigured)
+	}
+}
+
+func TestNormalizeTitleFallsBackForWhitespace(t *testing.T) {
+	if got := normalizeTitle("   ", "Fallback"); got != "Fallback" {
+		t.Fatalf("normalizeTitle() = %q, want %q", got, "Fallback")
+	}
+	if got := normalizeTitle("  Custom  ", "Fallback"); got != "Custom" {
+		t.Fatalf("normalizeTitle() = %q, want %q", got, "Custom")
+	}
 }

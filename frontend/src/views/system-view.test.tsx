@@ -6,12 +6,23 @@ import {
   waitForElementToBeRemoved,
   within,
 } from "@testing-library/preact";
-import { SystemView } from "./system-view";
+import { SystemInfo, SystemView } from "./system-view";
 import { mockConsole } from "../test-support/console-mock";
+
+function makeSystemInfo(overrides: Partial<SystemInfo> = {}): SystemInfo {
+  return {
+    os: "darwin",
+    arch: "arm64",
+    compiler: "gc",
+    cpus: 10,
+    version: "go1.26.1",
+    ...overrides,
+  };
+}
 
 describe("SystemView", () => {
   it("renders the heading", () => {
-    const getSystemInfo = mock(() => Promise.resolve({}));
+    const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
     const view = render(<SystemView getSystemInfo={getSystemInfo} />);
     expect(
       view.getByRole("heading", { name: "System Information" }).textContent,
@@ -19,9 +30,7 @@ describe("SystemView", () => {
   });
 
   it("shows loading state initially", () => {
-    const getSystemInfo = mock(
-      () => new Promise<Record<string, string>>(() => {}),
-    );
+    const getSystemInfo = mock(() => new Promise<SystemInfo>(() => {}));
     const view = render(<SystemView getSystemInfo={getSystemInfo} />);
     const loading = view.getByText("Loading system info...");
     expect(loading).not.toBeNull();
@@ -29,16 +38,14 @@ describe("SystemView", () => {
   });
 
   it("displays system info after loading", async () => {
-    const getSystemInfo = mock(() =>
-      Promise.resolve({ os: "darwin", arch: "arm64", cpus: "10" }),
-    );
+    const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
     const view = render(<SystemView getSystemInfo={getSystemInfo} />);
     await waitForElementToBeRemoved(() =>
       view.queryByText("Loading system info..."),
     );
 
     const cards = document.querySelectorAll(".info-card");
-    expect(cards.length).toBe(3);
+    expect(cards.length).toBe(5);
     const labels = Array.from(document.querySelectorAll(".info-label")).map(
       (el) => el.textContent,
     );
@@ -78,7 +85,7 @@ describe("SystemView", () => {
   });
 
   it("calls openDirectoryDialog on button click", async () => {
-    const getSystemInfo = mock(() => Promise.resolve({}));
+    const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
     const openDirectoryDialog = mock(() =>
       Promise.resolve("/Users/test/Documents"),
     );
@@ -105,7 +112,7 @@ describe("SystemView", () => {
   });
 
   it("does not show selected path when dialog is cancelled", async () => {
-    const getSystemInfo = mock(() => Promise.resolve({}));
+    const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
     const openDirectoryDialog = mock(() => Promise.resolve(""));
     const view = render(
       <SystemView
@@ -125,7 +132,7 @@ describe("SystemView", () => {
   });
 
   it("handles openDirectoryDialog failure gracefully", async () => {
-    const getSystemInfo = mock(() => Promise.resolve({}));
+    const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
     const openDirectoryDialog = mock(() =>
       Promise.reject(new Error("cancelled")),
     );

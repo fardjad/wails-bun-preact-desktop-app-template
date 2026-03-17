@@ -10,13 +10,15 @@ import {
   Create as $Create,
 } from "@wailsio/runtime";
 
-export function GetSystemInfo(): $CancellablePromise<{
-  [_ in string]?: string;
-}> {
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
+export function GetSystemInfo(): $CancellablePromise<$models.SystemInfo> {
   return $Call.ByID(4209737605).then(($result: any) => {
     return $$createType0($result);
   });
 }
 
 // Private type creation functions
-const $$createType0 = $Create.Map($Create.Any, $Create.Any);
+const $$createType0 = $models.SystemInfo.createFrom;

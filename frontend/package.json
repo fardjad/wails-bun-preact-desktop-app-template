@@ -11,7 +11,7 @@
     "typecheck": "bun x tsc --noEmit"
   },
   "dependencies": {
-    "@wailsio/runtime": "latest",
+    "@wailsio/runtime": "3.0.0-alpha.74",
     "preact": "^10.29.0",
     "preact-router": "^4.1.2"
   },
