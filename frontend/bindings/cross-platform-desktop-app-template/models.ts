@@ -6,6 +6,83 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class DatabaseStatus {
+  path: string;
+  directory: string;
+  mode: string;
+  remoteUrl?: string;
+  syncEnabled: boolean;
+  connected: boolean;
+  schemaVersion: number;
+
+  /** Creates a new DatabaseStatus instance. */
+  constructor($$source: Partial<DatabaseStatus> = {}) {
+    if (!("path" in $$source)) {
+      this["path"] = "";
+    }
+    if (!("directory" in $$source)) {
+      this["directory"] = "";
+    }
+    if (!("mode" in $$source)) {
+      this["mode"] = "";
+    }
+    if (!("syncEnabled" in $$source)) {
+      this["syncEnabled"] = false;
+    }
+    if (!("connected" in $$source)) {
+      this["connected"] = false;
+    }
+    if (!("schemaVersion" in $$source)) {
+      this["schemaVersion"] = 0;
+    }
+
+    Object.assign(this, $$source);
+  }
+
+  /**
+   * Creates a new DatabaseStatus instance from a string or object.
+   */
+  static createFrom($$source: any = {}): DatabaseStatus {
+    let $$parsedSource =
+      typeof $$source === "string" ? JSON.parse($$source) : $$source;
+    return new DatabaseStatus($$parsedSource as Partial<DatabaseStatus>);
+  }
+}
+
+export class GreetingRecord {
+  id: number;
+  name: string;
+  message: string;
+  createdAt: string;
+
+  /** Creates a new GreetingRecord instance. */
+  constructor($$source: Partial<GreetingRecord> = {}) {
+    if (!("id" in $$source)) {
+      this["id"] = 0;
+    }
+    if (!("name" in $$source)) {
+      this["name"] = "";
+    }
+    if (!("message" in $$source)) {
+      this["message"] = "";
+    }
+    if (!("createdAt" in $$source)) {
+      this["createdAt"] = "";
+    }
+
+    Object.assign(this, $$source);
+  }
+
+  /**
+   * Creates a new GreetingRecord instance from a string or object.
+   */
+  static createFrom($$source: any = {}): GreetingRecord {
+    let $$parsedSource =
+      typeof $$source === "string" ? JSON.parse($$source) : $$source;
+    return new GreetingRecord($$parsedSource as Partial<GreetingRecord>);
+  }
+}
+
 export class SystemInfo {
   os: string;
   arch: string;

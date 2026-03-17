@@ -12,7 +12,8 @@ import (
 var assets embed.FS
 
 func main() {
-	greetService := NewGreetService()
+	databaseService := NewDatabaseService()
+	greetService := NewGreetService(databaseService)
 	systemService := NewSystemService()
 	desktopService := NewDesktopService()
 	assetsHandler := application.BundledAssetFileServer(assets)
@@ -21,6 +22,7 @@ func main() {
 		Name:        appProductName,
 		Description: appDescription,
 		Services: []application.Service{
+			application.NewService(databaseService),
 			application.NewService(greetService),
 			application.NewService(systemService),
 			application.NewService(desktopService),

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
+import { GetDatabaseStatus as DefaultGetDatabaseStatus } from "../../bindings/cross-platform-desktop-app-template/databaseservice";
 import { GetSystemInfo as DefaultGetSystemInfo } from "../../bindings/cross-platform-desktop-app-template/systemservice";
 import { OpenDirectoryDialog as DefaultOpenDirectoryDialog } from "../../bindings/cross-platform-desktop-app-template/desktopservice";
 import "./system-view.css";
@@ -11,25 +12,45 @@ export interface SystemInfo {
   version: string;
 }
 
+export interface DatabaseStatus {
+  path: string;
+  directory: string;
+  mode: string;
+  remoteUrl?: string;
+  syncEnabled: boolean;
+  connected: boolean;
+  schemaVersion: number;
+}
+
 interface Props {
   getSystemInfo?: () => PromiseLike<SystemInfo>;
+  getDatabaseStatus?: () => PromiseLike<DatabaseStatus>;
   openDirectoryDialog?: (title: string) => PromiseLike<string>;
 }
 
 export function SystemView({
   getSystemInfo = DefaultGetSystemInfo,
+  getDatabaseStatus = DefaultGetDatabaseStatus,
   openDirectoryDialog = DefaultOpenDirectoryDialog,
 }: Props) {
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(
+    null,
+  );
   const [selectedDir, setSelectedDir] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void (async () => {
       try {
-        setSystemInfo(await getSystemInfo());
+        const [nextSystemInfo, nextDatabaseStatus] = await Promise.all([
+          getSystemInfo(),
+          getDatabaseStatus(),
+        ]);
+        setSystemInfo(nextSystemInfo);
+        setDatabaseStatus(nextDatabaseStatus);
       } catch (e) {
-        console.error("Failed to get system info:", e);
+        console.error("Failed to load system view data:", e);
       } finally {
         setLoading(false);
       }
@@ -72,6 +93,23 @@ export function SystemView({
           </p>
         )}
       </section>
+
+      {databaseStatus && (
+        <section class="native-section">
+          <h2>Database</h2>
+          <p class="subtitle">
+            Stored in an OS-appropriate user data directory.
+          </p>
+          <div class="info-grid">
+            {Object.entries(databaseStatus).map(([key, value]) => (
+              <div key={key} class="info-card">
+                <span class="info-label">{key}</span>
+                <span class="info-value">{String(value)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

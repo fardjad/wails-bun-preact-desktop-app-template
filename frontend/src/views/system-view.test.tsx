@@ -6,7 +6,7 @@ import {
   waitForElementToBeRemoved,
   within,
 } from "@testing-library/preact";
-import { SystemInfo, SystemView } from "./system-view";
+import { DatabaseStatus, SystemInfo, SystemView } from "./system-view";
 import { mockConsole } from "../test-support/console-mock";
 
 function makeSystemInfo(overrides: Partial<SystemInfo> = {}): SystemInfo {
@@ -20,10 +20,30 @@ function makeSystemInfo(overrides: Partial<SystemInfo> = {}): SystemInfo {
   };
 }
 
+function makeDatabaseStatus(
+  overrides: Partial<DatabaseStatus> = {},
+): DatabaseStatus {
+  return {
+    path: "/Users/test/Library/Application Support/com.example.app/app.db",
+    directory: "/Users/test/Library/Application Support/com.example.app",
+    mode: "local",
+    syncEnabled: false,
+    connected: true,
+    schemaVersion: 1,
+    ...overrides,
+  };
+}
+
 describe("SystemView", () => {
   it("renders the heading", () => {
     const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
-    const view = render(<SystemView getSystemInfo={getSystemInfo} />);
+    const getDatabaseStatus = mock(() => Promise.resolve(makeDatabaseStatus()));
+    const view = render(
+      <SystemView
+        getSystemInfo={getSystemInfo}
+        getDatabaseStatus={getDatabaseStatus}
+      />,
+    );
     expect(
       view.getByRole("heading", { name: "System Information" }).textContent,
     ).toBe("System Information");
@@ -31,7 +51,13 @@ describe("SystemView", () => {
 
   it("shows loading state initially", () => {
     const getSystemInfo = mock(() => new Promise<SystemInfo>(() => {}));
-    const view = render(<SystemView getSystemInfo={getSystemInfo} />);
+    const getDatabaseStatus = mock(() => new Promise<DatabaseStatus>(() => {}));
+    const view = render(
+      <SystemView
+        getSystemInfo={getSystemInfo}
+        getDatabaseStatus={getDatabaseStatus}
+      />,
+    );
     const loading = view.getByText("Loading system info...");
     expect(loading).not.toBeNull();
     expect(loading.textContent).toBe("Loading system info...");
@@ -39,13 +65,19 @@ describe("SystemView", () => {
 
   it("displays system info after loading", async () => {
     const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
-    const view = render(<SystemView getSystemInfo={getSystemInfo} />);
+    const getDatabaseStatus = mock(() => Promise.resolve(makeDatabaseStatus()));
+    const view = render(
+      <SystemView
+        getSystemInfo={getSystemInfo}
+        getDatabaseStatus={getDatabaseStatus}
+      />,
+    );
     await waitForElementToBeRemoved(() =>
       view.queryByText("Loading system info..."),
     );
 
     const cards = document.querySelectorAll(".info-card");
-    expect(cards.length).toBe(5);
+    expect(cards.length).toBe(11);
     const labels = Array.from(document.querySelectorAll(".info-label")).map(
       (el) => el.textContent,
     );
@@ -62,10 +94,16 @@ describe("SystemView", () => {
 
   it("handles getSystemInfo failure gracefully", async () => {
     const getSystemInfo = mock(() => Promise.reject(new Error("fail")));
+    const getDatabaseStatus = mock(() => Promise.resolve(makeDatabaseStatus()));
     const consoleMock = mockConsole();
 
     try {
-      const view = render(<SystemView getSystemInfo={getSystemInfo} />);
+      const view = render(
+        <SystemView
+          getSystemInfo={getSystemInfo}
+          getDatabaseStatus={getDatabaseStatus}
+        />,
+      );
       await waitForElementToBeRemoved(() =>
         view.queryByText("Loading system info..."),
       );
@@ -73,7 +111,7 @@ describe("SystemView", () => {
       await waitFor(() => {
         expect(consoleMock.calls.error).toHaveLength(1);
         expect(consoleMock.calls.error?.[0]?.[0]).toBe(
-          "Failed to get system info:",
+          "Failed to load system view data:",
         );
         expect((consoleMock.calls.error?.[0]?.[1] as Error).message).toBe(
           "fail",
@@ -86,12 +124,14 @@ describe("SystemView", () => {
 
   it("calls openDirectoryDialog on button click", async () => {
     const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
+    const getDatabaseStatus = mock(() => Promise.resolve(makeDatabaseStatus()));
     const openDirectoryDialog = mock(() =>
       Promise.resolve("/Users/test/Documents"),
     );
     const view = render(
       <SystemView
         getSystemInfo={getSystemInfo}
+        getDatabaseStatus={getDatabaseStatus}
         openDirectoryDialog={openDirectoryDialog}
       />,
     );
@@ -113,10 +153,12 @@ describe("SystemView", () => {
 
   it("does not show selected path when dialog is cancelled", async () => {
     const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
+    const getDatabaseStatus = mock(() => Promise.resolve(makeDatabaseStatus()));
     const openDirectoryDialog = mock(() => Promise.resolve(""));
     const view = render(
       <SystemView
         getSystemInfo={getSystemInfo}
+        getDatabaseStatus={getDatabaseStatus}
         openDirectoryDialog={openDirectoryDialog}
       />,
     );
@@ -133,6 +175,7 @@ describe("SystemView", () => {
 
   it("handles openDirectoryDialog failure gracefully", async () => {
     const getSystemInfo = mock(() => Promise.resolve(makeSystemInfo()));
+    const getDatabaseStatus = mock(() => Promise.resolve(makeDatabaseStatus()));
     const openDirectoryDialog = mock(() =>
       Promise.reject(new Error("cancelled")),
     );
@@ -142,6 +185,7 @@ describe("SystemView", () => {
       const view = render(
         <SystemView
           getSystemInfo={getSystemInfo}
+          getDatabaseStatus={getDatabaseStatus}
           openDirectoryDialog={openDirectoryDialog}
         />,
       );

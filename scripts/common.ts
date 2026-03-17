@@ -120,7 +120,7 @@ export async function loadProjectConfig(): Promise<ProjectConfig> {
     slug: deriveSlug(buildConfig.info.productName),
     frontendPackageName: `${deriveSlug(buildConfig.info.productName)}-frontend`,
     vitePort: 34115,
-    macOSDeploymentTarget: "10.15",
+    macOSDeploymentTarget: "15.5",
   };
 }
 
@@ -377,7 +377,7 @@ export async function runGoBuild(
   const env: Record<string, string> = {
     GOOS: target.os,
     GOARCH: target.arch,
-    CGO_ENABLED: target.os === "windows" ? "0" : "1",
+    CGO_ENABLED: "1",
   };
 
   if (target.os === "darwin") {
@@ -386,14 +386,21 @@ export async function runGoBuild(
     env.CGO_LDFLAGS = `-mmacosx-version-min=${config.macOSDeploymentTarget}`;
   }
 
+  const extLdFlags =
+    target.os === "darwin"
+      ? `-extldflags=-mmacosx-version-min=${config.macOSDeploymentTarget}`
+      : "";
+
   if (mode === "dev") {
-    await $`go build -buildvcs=false -gcflags=${"all=-N -l"} -o ${outputPath} .`
+    const ldflags = extLdFlags ? `${extLdFlags}` : "";
+    await $`go build -buildvcs=false -gcflags=${"all=-N -l"} -ldflags=${ldflags} -o ${outputPath} .`
       .cwd(repoRoot)
       .env({ ...process.env, ...env });
     return;
   }
 
-  const ldflags = target.os === "windows" ? "-w -s -H windowsgui" : "-w -s";
+  const ldflagsBase = target.os === "windows" ? "-w -s -H windowsgui" : "-w -s";
+  const ldflags = [ldflagsBase, extLdFlags].filter(Boolean).join(" ");
   await $`go build -buildvcs=false -tags production -trimpath -ldflags=${ldflags} -o ${outputPath} .`
     .cwd(repoRoot)
     .env({ ...process.env, ...env });

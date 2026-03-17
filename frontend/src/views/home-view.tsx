@@ -1,18 +1,53 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { ListGreetings as DefaultListGreetings } from "../../bindings/cross-platform-desktop-app-template/databaseservice";
 import { Greet as DefaultGreet } from "../../bindings/cross-platform-desktop-app-template/greetservice";
 import "./home-view.css";
 
-interface Props {
-  greet?: (name: string) => PromiseLike<string>;
+export interface GreetingRecord {
+  id: number;
+  name: string;
+  message: string;
+  createdAt: string;
 }
 
-export function HomeView({ greet = DefaultGreet }: Props) {
+interface Props {
+  greet?: (name: string) => PromiseLike<string>;
+  listGreetings?: (limit: number) => PromiseLike<GreetingRecord[]>;
+}
+
+export function HomeView({
+  greet = DefaultGreet,
+  listGreetings = DefaultListGreetings,
+}: Props) {
   const [name, setName] = useState("");
   const [greeting, setGreeting] = useState("");
+  const [error, setError] = useState("");
+  const [recentGreetings, setRecentGreetings] = useState<GreetingRecord[]>([]);
+
+  async function loadGreetings() {
+    try {
+      setRecentGreetings(await listGreetings(5));
+    } catch (e) {
+      console.error("Failed to load recent greetings:", e);
+    }
+  }
+
+  useEffect(() => {
+    void loadGreetings();
+  }, []);
 
   async function handleGreet() {
     if (!name.trim()) return;
-    setGreeting(await greet(name));
+    setError("");
+
+    try {
+      setGreeting(await greet(name));
+      await loadGreetings();
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Unable to greet right now.";
+      setError(message);
+    }
   }
 
   return (
@@ -34,7 +69,21 @@ export function HomeView({ greet = DefaultGreet }: Props) {
           <button onClick={handleGreet}>Greet</button>
         </div>
         {greeting && <p class="greeting-result">{greeting}</p>}
+        {error && <p class="greeting-result">{error}</p>}
       </div>
+
+      <section class="greet-section">
+        <h2>Recent Greetings</h2>
+        {recentGreetings.length === 0 ? (
+          <p class="subtitle">No greetings saved yet.</p>
+        ) : (
+          <ul>
+            {recentGreetings.map((item) => (
+              <li key={item.id}>{item.message}</li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
