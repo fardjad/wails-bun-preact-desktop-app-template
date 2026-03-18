@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	libsql "github.com/tursodatabase/go-libsql"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	_ "turso.tech/database/tursogo"
 )
 
 type DatabaseConfig struct {
@@ -66,10 +67,9 @@ CREATE TABLE IF NOT EXISTS greetings (
 }
 
 type DatabaseService struct {
-	config    DatabaseConfig
-	db        *sql.DB
-	connector *libsql.Connector
-	status    DatabaseStatus
+	config DatabaseConfig
+	db     *sql.DB
+	status DatabaseStatus
 }
 
 func NewDatabaseService() *DatabaseService {
@@ -154,44 +154,29 @@ func (s *DatabaseService) open() error {
 		return fmt.Errorf("create data directory: %w", err)
 	}
 
-	db, connector, mode, err := openDatabaseConnection(s.config, dbPath)
+	db, mode, err := openDatabaseConnection(s.config, dbPath)
 	if err != nil {
 		return err
 	}
 
-	if connector != nil {
-		if _, err := connector.Sync(); err != nil {
-			_ = db.Close()
-			connector.Close()
-			return fmt.Errorf("initial database sync failed: %w", err)
-		}
-	}
-
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
-		if connector != nil {
-			connector.Close()
-		}
 		return fmt.Errorf("ping database: %w", err)
 	}
 
 	version, err := applyMigrations(db)
 	if err != nil {
 		_ = db.Close()
-		if connector != nil {
-			connector.Close()
-		}
 		return err
 	}
 
 	s.db = db
-	s.connector = connector
 	s.status = DatabaseStatus{
 		Path:          dbPath,
 		Directory:     dataDir,
 		Mode:          mode,
-		RemoteURL:     s.config.PrimaryURL,
-		SyncEnabled:   connector != nil,
+		RemoteURL:     "",
+		SyncEnabled:   false,
 		Connected:     true,
 		SchemaVersion: version,
 	}
@@ -207,14 +192,8 @@ func (s *DatabaseService) close() error {
 			closeErr = fmt.Errorf("close database: %w", err)
 		}
 	}
-	if s.connector != nil {
-		if err := s.connector.Close(); err != nil && closeErr == nil {
-			closeErr = fmt.Errorf("close database connector: %w", err)
-		}
-	}
 
 	s.db = nil
-	s.connector = nil
 	s.status.Connected = false
 
 	return closeErr
@@ -268,39 +247,26 @@ func resolveAppDataDir(config DatabaseConfig) (string, error) {
 	}
 }
 
-func openDatabaseConnection(config DatabaseConfig, dbPath string) (*sql.DB, *libsql.Connector, string, error) {
-	if strings.TrimSpace(config.PrimaryURL) == "" {
-		db, err := sql.Open("libsql", "file:"+filepath.ToSlash(dbPath))
-		if err != nil {
-			return nil, nil, "", fmt.Errorf("open local database: %w", err)
-		}
-		return db, nil, "local", nil
-	}
-
-	options := make([]libsql.Option, 0, 4)
-	if token := strings.TrimSpace(config.AuthToken); token != "" {
-		options = append(options, libsql.WithAuthToken(token))
-	}
-	if key := strings.TrimSpace(config.EncryptionKey); key != "" {
-		options = append(options, libsql.WithEncryption(key))
-	}
-	if key := strings.TrimSpace(config.RemoteEncryptionKey); key != "" {
-		options = append(options, libsql.WithRemoteEncryption(key))
-	}
-	if config.SyncInterval > 0 {
-		options = append(options, libsql.WithSyncInterval(config.SyncInterval))
-	}
-
-	connector, err := libsql.NewEmbeddedReplicaConnector(
-		dbPath,
-		strings.TrimSpace(config.PrimaryURL),
-		options...,
-	)
+func openDatabaseConnection(config DatabaseConfig, dbPath string) (*sql.DB, string, error) {
+	db, err := sql.Open("turso", buildLocalDatabaseDSN(config, dbPath))
 	if err != nil {
-		return nil, nil, "", fmt.Errorf("open Turso embedded replica: %w", err)
+		return nil, "", fmt.Errorf("open local database: %w", err)
+	}
+	return db, "local", nil
+}
+
+func buildLocalDatabaseDSN(config DatabaseConfig, dbPath string) string {
+	values := url.Values{}
+	if key := strings.TrimSpace(config.EncryptionKey); key != "" {
+		values.Set("experimental", "encryption")
+		values.Set("encryption_hexkey", key)
 	}
 
-	return sql.OpenDB(connector), connector, "embedded-replica", nil
+	dsn := filepath.ToSlash(dbPath)
+	if encoded := values.Encode(); encoded != "" {
+		dsn += "?" + encoded
+	}
+	return dsn
 }
 
 func applyMigrations(db *sql.DB) (int, error) {

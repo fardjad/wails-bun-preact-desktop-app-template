@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func TestResolveAppDataDirFromBaseDir(t *testing.T) {
 	dir, err := resolveAppDataDir(DatabaseConfig{
@@ -10,7 +13,7 @@ func TestResolveAppDataDirFromBaseDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveAppDataDir() error = %v", err)
 	}
-	if want := "/tmp/example/com.example.app"; dir != want {
+	if want := filepath.Join("/tmp/example", "com.example.app"); dir != want {
 		t.Fatalf("resolveAppDataDir() = %q, want %q", dir, want)
 	}
 }
@@ -23,11 +26,11 @@ func TestResolveDatabasePath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveDatabasePath() error = %v", err)
 	}
-	if dataDir != "/tmp/example/com.example.app" {
-		t.Fatalf("dataDir = %q, want %q", dataDir, "/tmp/example/com.example.app")
+	if want := filepath.Join("/tmp/example", "com.example.app"); dataDir != want {
+		t.Fatalf("dataDir = %q, want %q", dataDir, want)
 	}
-	if dbPath != "/tmp/example/com.example.app/app.db" {
-		t.Fatalf("dbPath = %q, want %q", dbPath, "/tmp/example/com.example.app/app.db")
+	if want := filepath.Join("/tmp/example", "com.example.app", "app.db"); dbPath != want {
+		t.Fatalf("dbPath = %q, want %q", dbPath, want)
 	}
 }
 
@@ -40,5 +43,23 @@ func TestParseSyncInterval(t *testing.T) {
 	}
 	if got := parseSyncInterval("invalid"); got != 0 {
 		t.Fatalf("parseSyncInterval(\"invalid\") = %v, want 0", got)
+	}
+}
+
+func TestBuildLocalDatabaseDSN(t *testing.T) {
+	got := buildLocalDatabaseDSN(DatabaseConfig{}, "/tmp/example/app.db")
+	if got != "/tmp/example/app.db" {
+		t.Fatalf("buildLocalDatabaseDSN() = %q, want %q", got, "/tmp/example/app.db")
+	}
+}
+
+func TestBuildLocalDatabaseDSNWithEncryption(t *testing.T) {
+	got := buildLocalDatabaseDSN(DatabaseConfig{
+		EncryptionKey: "abc123",
+	}, "/tmp/example/app.db")
+
+	want := "/tmp/example/app.db?encryption_hexkey=abc123&experimental=encryption"
+	if got != want {
+		t.Fatalf("buildLocalDatabaseDSN() = %q, want %q", got, want)
 	}
 }
