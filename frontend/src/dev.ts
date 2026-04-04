@@ -9,6 +9,16 @@ type ProxySocketData = {
   upstreamUrl: string;
 };
 
+function normalizeWsPayload(
+  message: string | ArrayBuffer | Uint8Array<ArrayBufferLike>,
+) {
+  if (typeof message === "string" || message instanceof ArrayBuffer) {
+    return message;
+  }
+
+  return new Uint8Array(message);
+}
+
 const wailsDevShim = `
 <script>
   (function () {
@@ -154,7 +164,7 @@ const proxyServer = Bun.serve<ProxySocketData>({
 
       upstream.addEventListener("open", () => {
         for (const message of ws.data.queue) {
-          upstream.send(message);
+          upstream.send(normalizeWsPayload(message));
         }
         ws.data.queue.length = 0;
       });
@@ -182,7 +192,7 @@ const proxyServer = Bun.serve<ProxySocketData>({
         return;
       }
 
-      upstream.send(message);
+      upstream.send(normalizeWsPayload(message));
     },
     close(ws, code, reason) {
       const upstream = ws.data.upstream;
