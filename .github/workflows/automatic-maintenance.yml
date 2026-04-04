@@ -1,0 +1,88 @@
+name: Automatic Maintenance
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@main
+
+      - uses: oven-sh/setup-bun@main
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-go@main
+        with:
+          go-version: "stable"
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libfuse2t64 \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf \
+            pkg-config \
+            shfmt
+
+      - name: Install Wails CLI
+        run: |
+          WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
+          go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - uses: fardjad/my-actions/automatic-maintenance@main
+        with:
+          source-branch: automatic-maintenance/dependencies
+          target-branch: main
+          github-token: ${{ github.token }}
+          check-script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            bun run update:deps --check
+          change-script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            log_path="${{ runner.temp }}/automatic-maintenance-update.log"
+            summary_path="${{ runner.temp }}/automatic-maintenance-summary.txt"
+            bun run update:deps | tee "$log_path"
+            awk '
+              found { print }
+              /^=== AUTOMATIC_MAINTENANCE_SUMMARY ===$/ { found = 1 }
+            ' "$log_path" > "$summary_path"
+            bun run build-version patch
+          verify-script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            bun run test
+          commit-script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            summary_path="${{ runner.temp }}/automatic-maintenance-summary.txt"
+            commit_message="$(mktemp)"
+
+            {
+              printf 'Perform automatic maintenance tasks\n\n'
+              if [[ -s "$summary_path" ]]; then
+                cat "$summary_path"
+              fi
+            } >"$commit_message"
+
+            git add -A .
+            git commit -F "$commit_message" || true
+            rm -f "$commit_message"

@@ -17,6 +17,7 @@
     "style-check": "bun run scripts/style.ts check",
     "style-fix": "bun run scripts/style.ts fix",
     "update:deps": "bun run scripts/update-dependencies.ts",
+    "build-version": "bun run scripts/build-version.ts",
     "sync-app-config": "bun run scripts/sync-app-config.ts",
     "release": "bun run scripts/release.ts",
     "metadata": "bun run scripts/metadata.ts",
