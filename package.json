@@ -2,7 +2,7 @@
   "name": "desktop-application-workspace",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.3.11",
     "husky": "^9.1.7"
   },
   "scripts": {
@@ -16,6 +16,7 @@
     "test:go": "bun run scripts/test.ts go",
     "style-check": "bun run scripts/style.ts check",
     "style-fix": "bun run scripts/style.ts fix",
+    "update:deps": "bun run scripts/update-dependencies.ts",
     "sync-app-config": "bun run scripts/sync-app-config.ts",
     "release": "bun run scripts/release.ts",
     "metadata": "bun run scripts/metadata.ts",
