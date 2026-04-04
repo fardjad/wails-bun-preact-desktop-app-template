@@ -7,7 +7,7 @@ info:
   description: "A cross-platform desktop application built with Wails, Bun, and Preact."
   copyright: "(c) 2026, Fardjad Davari"
   comments: "Cross-platform Desktop App Template"
-  version: "0.2.2"
+  version: "0.2.3"
 
 dev_mode:
   root_path: .
