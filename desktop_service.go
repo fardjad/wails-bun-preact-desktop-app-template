@@ -13,7 +13,11 @@ var errDesktopServiceWindowTitleEmpty = errors.New("window title cannot be empty
 
 type DesktopService struct {
 	app        *application.App
-	mainWindow application.Window
+	mainWindow desktopWindow
+}
+
+type desktopWindow interface {
+	SetTitle(string) application.Window
 }
 
 func NewDesktopService() *DesktopService {
@@ -22,10 +26,6 @@ func NewDesktopService() *DesktopService {
 
 func (s *DesktopService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
 	s.app = application.Get()
-	if s.app != nil {
-		s.mainWindow = s.app.Window.Current()
-	}
-
 	return nil
 }
 

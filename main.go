@@ -11,21 +11,27 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed build/appicon.png
+var icon []byte
+
 func main() {
 	databaseService := NewDatabaseService()
 	greetService := NewGreetService(databaseService)
 	systemService := NewSystemService()
 	desktopService := NewDesktopService()
+	systemTrayService := NewSystemTrayService()
 	assetsHandler := application.BundledAssetFileServer(assets)
 
 	app := application.New(application.Options{
 		Name:        appProductName,
 		Description: appDescription,
+		Icon:        icon,
 		Services: []application.Service{
 			application.NewService(databaseService),
 			application.NewService(greetService),
 			application.NewService(systemService),
 			application.NewService(desktopService),
+			application.NewService(systemTrayService),
 		},
 		Assets: application.AssetOptions{
 			Handler: assetsHandler,
@@ -53,7 +59,7 @@ func main() {
 		},
 	})
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            appProductName,
 		Width:            1024,
 		Height:           768,
@@ -74,6 +80,8 @@ func main() {
 			DisableFramelessWindowDecorations: false,
 		},
 	})
+	desktopService.mainWindow = mainWindow
+	systemTrayService.mainWindow = mainWindow
 
 	err := app.Run()
 	if err != nil {
