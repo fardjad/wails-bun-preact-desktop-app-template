@@ -1,6 +1,6 @@
 module cross-platform-desktop-app-template
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
