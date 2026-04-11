@@ -1,7 +1,7 @@
 {
   "name": "cross-platform-desktop-app-template-frontend",
   "private": true,
-  "version": "0.2.6",
+  "version": "0.2.7",
   "type": "module",
   "scripts": {
     "dev": "bun run src/dev.ts",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@wailsio/runtime": "3.0.0-alpha.79",
-    "preact": "^10.29.0",
+    "preact": "^10.29.1",
     "preact-router": "^4.1.2"
   },
   "devDependencies": {
