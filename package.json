@@ -2,7 +2,7 @@
   "name": "desktop-application-workspace",
   "private": true,
   "devDependencies": {
-    "@types/bun": "^1.3.12",
+    "@types/bun": "^1.3.13",
     "husky": "^9.1.7"
   },
   "scripts": {
