@@ -26,7 +26,7 @@ if (mode !== "apply" && mode !== "check") {
 
 async function writeLatestBunVersion(rootDir: string) {
   const latestBunVersion = (
-    await $`bunx npm view bun version`.cwd(rootDir).text()
+    await $`bun x npm view bun version`.cwd(rootDir).text()
   ).trim();
 
   await Bun.write(path.join(rootDir, ".bun-version"), `${latestBunVersion}\n`);

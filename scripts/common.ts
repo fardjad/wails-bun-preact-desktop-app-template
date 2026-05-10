@@ -53,6 +53,14 @@ export const buildLinuxDir = path.join(buildDir, "linux");
 export const buildWindowsDir = path.join(buildDir, "windows");
 export const linuxAppImageDir = path.join(buildLinuxDir, "appimage");
 
+let cachedWailsCliPath: string | null = null;
+const cachedGoBinToolPaths = new Map<string, string>();
+const defaultLinuxPkgConfigPath = [
+  "/usr/lib64/pkgconfig",
+  "/usr/lib/pkgconfig",
+  "/usr/share/pkgconfig",
+].join(":");
+
 function deriveSlug(productName: string) {
   const asciiName = productName
     .normalize("NFKD")
@@ -133,6 +141,44 @@ export async function pathExists(targetPath: string) {
   }
 }
 
+export async function getWailsCliPath() {
+  if (cachedWailsCliPath) {
+    return cachedWailsCliPath;
+  }
+
+  cachedWailsCliPath = await getGoBinToolPath("wails3");
+  return cachedWailsCliPath;
+}
+
+export async function getGoBinToolPath(toolName: string) {
+  const cached = cachedGoBinToolPaths.get(toolName);
+  if (cached) {
+    return cached;
+  }
+
+  const goPath = (await $`go env GOPATH`.cwd(repoRoot).text()).trim();
+  const candidate = path.join(goPath, "bin", toolName);
+  const resolved = (await pathExists(candidate)) ? candidate : toolName;
+  cachedGoBinToolPaths.set(toolName, resolved);
+  return resolved;
+}
+
+export function withLinuxPkgConfigEnv(
+  env: Record<string, string> = process.env,
+) {
+  if (process.platform !== "linux") {
+    return env;
+  }
+
+  const existing = env.PKG_CONFIG_PATH?.trim();
+  return {
+    ...env,
+    PKG_CONFIG_PATH: existing
+      ? `${existing}:${defaultLinuxPkgConfigPath}`
+      : defaultLinuxPkgConfigPath,
+  };
+}
+
 export async function ensureDirectory(targetPath: string) {
   await fs.mkdir(targetPath, { recursive: true });
 }
@@ -173,7 +219,7 @@ async function formatGeneratedBindings(rootPath: string) {
     return;
   }
 
-  await $`bunx dprint fmt --allow-no-files ${files}`.cwd(repoRoot);
+  await $`bun x dprint fmt --allow-no-files ${files}`.cwd(repoRoot);
 }
 
 async function disableTypecheckingForGeneratedBindings(rootPath: string) {
@@ -302,16 +348,20 @@ export async function ensureFrontendDependencies() {
 
 export async function ensureAppIconExists() {
   await ensureDirectory(buildDir);
+  const wailsCliPath = await getWailsCliPath();
   if (!(await Bun.file(buildAppIconPath).exists())) {
-    await $`wails3 generate icons -example`.cwd(buildDir);
+    await $`${wailsCliPath} generate icons -example`
+      .cwd(buildDir)
+      .env(withLinuxPkgConfigEnv());
   }
 }
 
 export async function generatePlatformIcons() {
   await ensureAppIconExists();
-  await $`wails3 generate icons -input ${buildAppIconPath} -macfilename ${path.join(buildDarwinDir, "icons.icns")} -windowsfilename ${path.join(buildWindowsDir, "icon.ico")}`.cwd(
-    repoRoot,
-  );
+  const wailsCliPath = await getWailsCliPath();
+  await $`${wailsCliPath} generate icons -input ${buildAppIconPath} -macfilename ${path.join(buildDarwinDir, "icons.icns")} -windowsfilename ${path.join(buildWindowsDir, "icon.ico")}`
+    .cwd(repoRoot)
+    .env(withLinuxPkgConfigEnv());
 }
 
 export async function ensureEmbeddedDist(config: ProjectConfig) {
@@ -342,17 +392,18 @@ export async function generateBindings(
 ) {
   const clean = options.clean ?? mode === "release";
   const tempBindingsDir = path.join(frontendDir, ".bindings-next");
+  const wailsCliPath = await getWailsCliPath();
 
   await removeIfExists(tempBindingsDir);
 
   if (mode === "release") {
-    await $`wails3 generate bindings -ts -d ${tempBindingsDir} -clean=${String(clean)} -f "-tags production"`.cwd(
-      repoRoot,
-    );
+    await $`${wailsCliPath} generate bindings -ts -d ${tempBindingsDir} -clean=${String(clean)} -f "-tags production"`
+      .cwd(repoRoot)
+      .env(withLinuxPkgConfigEnv());
   } else {
-    await $`wails3 generate bindings -ts -d ${tempBindingsDir} -clean=${String(clean)}`.cwd(
-      repoRoot,
-    );
+    await $`${wailsCliPath} generate bindings -ts -d ${tempBindingsDir} -clean=${String(clean)}`
+      .cwd(repoRoot)
+      .env(withLinuxPkgConfigEnv());
   }
 
   await formatGeneratedBindings(tempBindingsDir);
@@ -395,7 +446,7 @@ export async function runGoBuild(
     const ldflags = extLdFlags ? `${extLdFlags}` : "";
     await $`go build -buildvcs=false -gcflags=${"all=-N -l"} -ldflags=${ldflags} -o ${outputPath} .`
       .cwd(repoRoot)
-      .env({ ...process.env, ...env });
+      .env(withLinuxPkgConfigEnv({ ...process.env, ...env }));
     return;
   }
 
@@ -403,14 +454,15 @@ export async function runGoBuild(
   const ldflags = [ldflagsBase, extLdFlags].filter(Boolean).join(" ");
   await $`go build -buildvcs=false -tags production -trimpath -ldflags=${ldflags} -o ${outputPath} .`
     .cwd(repoRoot)
-    .env({ ...process.env, ...env });
+    .env(withLinuxPkgConfigEnv({ ...process.env, ...env }));
 }
 
 export async function generateWindowsSyso(targetArch: GoArch) {
   await generatePlatformIcons();
-  await $`wails3 generate syso -arch ${targetArch} -icon ${path.join(buildWindowsDir, "icon.ico")} -manifest ${path.join(buildWindowsDir, "wails.exe.manifest")} -info ${path.join(buildWindowsDir, "info.json")} -out ${windowsSysoPath(targetArch)}`.cwd(
-    repoRoot,
-  );
+  const wailsCliPath = await getWailsCliPath();
+  await $`${wailsCliPath} generate syso -arch ${targetArch} -icon ${path.join(buildWindowsDir, "icon.ico")} -manifest ${path.join(buildWindowsDir, "wails.exe.manifest")} -info ${path.join(buildWindowsDir, "info.json")} -out ${windowsSysoPath(targetArch)}`
+    .cwd(repoRoot)
+    .env(withLinuxPkgConfigEnv());
 }
 
 export async function cleanupWindowsSyso(targetArch: GoArch) {
@@ -419,9 +471,10 @@ export async function cleanupWindowsSyso(targetArch: GoArch) {
 
 export async function generateLinuxDesktopEntry(config: ProjectConfig) {
   const desktopFilePath = path.join(buildLinuxDir, `${config.slug}.desktop`);
-  await $`wails3 generate .desktop -name ${config.info.productName} -comment ${config.info.description} -exec ${config.slug} -icon ${config.slug} -categories ${"Utility;"} -outputfile ${desktopFilePath}`.cwd(
-    repoRoot,
-  );
+  const wailsCliPath = await getWailsCliPath();
+  await $`${wailsCliPath} generate .desktop -name ${config.info.productName} -comment ${config.info.description} -exec ${config.slug} -icon ${config.slug} -categories ${"Utility;"} -outputfile ${desktopFilePath}`
+    .cwd(repoRoot)
+    .env(withLinuxPkgConfigEnv());
   return desktopFilePath;
 }
 

@@ -1,8 +1,15 @@
 import { $ } from "bun";
-import { buildConfigPath, loadProjectConfig, repoRoot } from "./common";
+import {
+  buildConfigPath,
+  getWailsCliPath,
+  loadProjectConfig,
+  repoRoot,
+  withLinuxPkgConfigEnv,
+} from "./common";
 
 const config = await loadProjectConfig();
+const wailsCliPath = await getWailsCliPath();
 
-await $`wails3 dev -config ${buildConfigPath} -port ${String(config.vitePort)}`.cwd(
-  repoRoot,
-);
+await $`${wailsCliPath} dev -config ${buildConfigPath} -port ${String(config.vitePort)}`
+  .cwd(repoRoot)
+  .env(withLinuxPkgConfigEnv());

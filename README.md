@@ -13,8 +13,7 @@ TypeScript, and Bun.
 Install the Wails CLI version that matches `go.mod`:
 
 ```sh
-WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
-go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
+bash scripts/install-wails-cli.sh
 ```
 
 On Linux, native builds and tests also need GTK/WebKit development packages.

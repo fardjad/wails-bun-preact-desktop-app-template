@@ -37,10 +37,7 @@ jobs:
             shfmt
 
       - name: Install Wails CLI
-        run: |
-          WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
-          go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+        run: bash scripts/install-wails-cli.sh
 
       - uses: fardjad/my-actions/automatic-maintenance@main
         with:

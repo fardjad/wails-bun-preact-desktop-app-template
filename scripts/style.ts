@@ -3,9 +3,11 @@ import * as path from "node:path";
 import {
   ensureBuildAssetsPresent,
   ensureEmbeddedDist,
+  getGoBinToolPath,
   loadProjectConfig,
   pathExists,
   repoRoot,
+  withLinuxPkgConfigEnv,
 } from "./common";
 
 const mode = process.argv[2];
@@ -42,6 +44,8 @@ const shellFiles = gitFiles.filter((filePath) =>
 const dockerFiles = gitFiles.filter((filePath) =>
   path.basename(filePath).includes("Dockerfile"),
 );
+const shfmtPath = await getGoBinToolPath("shfmt");
+const dockerfmtPath = await getGoBinToolPath("dockerfmt");
 
 if (mode === "check" && goFiles.length > 0) {
   const unformatted =
@@ -62,11 +66,11 @@ if (mode === "fix" && goFiles.length > 0) {
 
 if (dprintFiles.length > 0) {
   if (mode === "check") {
-    await $`bunx dprint check ${dprintFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
+    await $`bun x dprint check ${dprintFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
       repoRoot,
     );
   } else {
-    await $`bunx dprint fmt ${dprintFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
+    await $`bun x dprint fmt ${dprintFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
       repoRoot,
     );
   }
@@ -74,11 +78,11 @@ if (dprintFiles.length > 0) {
 
 if (shellFiles.length > 0) {
   if (mode === "check") {
-    await $`shfmt -i 2 -d ${shellFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
+    await $`${shfmtPath} -i 2 -d ${shellFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
       repoRoot,
     );
   } else {
-    await $`shfmt -i 2 -w ${shellFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
+    await $`${shfmtPath} -i 2 -w ${shellFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
       repoRoot,
     );
   }
@@ -86,17 +90,17 @@ if (shellFiles.length > 0) {
 
 if (dockerFiles.length > 0) {
   if (mode === "check") {
-    await $`dockerfmt -d ${dockerFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
+    await $`${dockerfmtPath} -d ${dockerFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
       repoRoot,
     );
   } else {
-    await $`dockerfmt -w ${dockerFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
+    await $`${dockerfmtPath} -w ${dockerFiles.map((filePath) => `${repoRoot}/${filePath}`)}`.cwd(
       repoRoot,
     );
   }
 }
 
-await $`go vet ./...`.cwd(repoRoot);
+await $`go vet ./...`.cwd(repoRoot).env(withLinuxPkgConfigEnv());
 
 if (mode === "check") {
   await $`bun run typecheck`.cwd(`${repoRoot}/frontend`);

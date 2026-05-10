@@ -14,7 +14,9 @@ import {
   generateLinuxDesktopEntry,
   generatePlatformIcons,
   generateWindowsSyso,
+  getWailsCliPath,
   runGoBuild,
+  withLinuxPkgConfigEnv,
   writeChecksumFile,
   zipMacOSApp,
 } from "./common";
@@ -140,11 +142,12 @@ async function releaseLinux(
   await Bun.write(stagingBinaryPath, Bun.file(tempBinaryPath));
   await Bun.write(stagingIconPath, Bun.file(buildAppIconPath));
   await Bun.write(stagingDesktopPath, Bun.file(desktopFilePath));
+  const wailsCliPath = await getWailsCliPath();
 
   try {
-    await $`wails3 generate appimage -binary ${stagingBinaryName} -icon ${stagingIconName} -desktopfile ${stagingDesktopName} -outputdir ${tempOutputDir} -builddir ${path.join(linuxAppImageDir, "build")}`.cwd(
-      linuxAppImageDir,
-    );
+    await $`${wailsCliPath} generate appimage -binary ${stagingBinaryName} -icon ${stagingIconName} -desktopfile ${stagingDesktopName} -outputdir ${tempOutputDir} -builddir ${path.join(linuxAppImageDir, "build")}`
+      .cwd(linuxAppImageDir)
+      .env(withLinuxPkgConfigEnv());
   } finally {
     await fs.rm(stagingBinaryPath, { force: true });
     await fs.rm(stagingIconPath, { force: true });

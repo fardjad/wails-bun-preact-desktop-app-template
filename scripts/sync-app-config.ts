@@ -13,6 +13,7 @@ import {
   generateBindings,
   generateLinuxDesktopEntry,
   generatePlatformIcons,
+  getWailsCliPath,
   goMetadataPath,
   goModPath,
   loadProjectConfig,
@@ -20,6 +21,7 @@ import {
   releaseDir,
   removeIfExists,
   repoRoot,
+  withLinuxPkgConfigEnv,
   writeJsonFile,
   writeTextIfChanged,
 } from "./common";
@@ -111,9 +113,10 @@ async function updateBuildAssets(
   config: Awaited<ReturnType<typeof loadProjectConfig>>,
 ) {
   await ensureAppIconExists();
-  await $`wails3 update build-assets -config ${buildConfigPath} -dir build -name ${config.info.productName} -binaryname ${config.slug} -productcompany ${config.info.companyName} -productname ${config.info.productName} -productidentifier ${config.info.productIdentifier} -productdescription ${config.info.description} -productcopyright ${config.info.copyright} -productcomments ${config.info.comments} -productversion ${config.info.version}`.cwd(
-    repoRoot,
-  );
+  const wailsCliPath = await getWailsCliPath();
+  await $`${wailsCliPath} update build-assets -config ${buildConfigPath} -dir build -name ${config.info.productName} -binaryname ${config.slug} -productcompany ${config.info.companyName} -productname ${config.info.productName} -productidentifier ${config.info.productIdentifier} -productdescription ${config.info.description} -productcopyright ${config.info.copyright} -productcomments ${config.info.comments} -productversion ${config.info.version}`
+    .cwd(repoRoot)
+    .env(withLinuxPkgConfigEnv());
 }
 
 async function ensureManualBuildAssets() {
@@ -173,6 +176,6 @@ await generateLinuxDesktopEntry(config);
 await $`gofmt -w ${goMetadataPath}`.cwd(repoRoot);
 await $`go mod tidy`.cwd(repoRoot);
 await generateBindings("dev", { clean: true });
-await $`bunx dprint fmt ${path.join(repoRoot, "build", "windows", "info.json")} ${frontendMetadataPath}`.cwd(
+await $`bun x dprint fmt ${path.join(repoRoot, "build", "windows", "info.json")} ${frontendMetadataPath}`.cwd(
   repoRoot,
 );

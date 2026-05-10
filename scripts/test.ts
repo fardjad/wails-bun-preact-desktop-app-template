@@ -4,6 +4,7 @@ import {
   ensureEmbeddedDist,
   ensureFrontendDependencies,
   generateBindings,
+  withLinuxPkgConfigEnv,
 } from "./common";
 import { getCurrentTarget, loadProjectConfig, repoRoot } from "./common";
 
@@ -35,5 +36,7 @@ if (mode === "all" || mode === "go") {
         }
       : undefined;
 
-  await $`go test ./...`.cwd(repoRoot).env({ ...process.env, ...(env ?? {}) });
+  await $`go test ./...`
+    .cwd(repoRoot)
+    .env(withLinuxPkgConfigEnv({ ...process.env, ...(env ?? {}) }));
 }

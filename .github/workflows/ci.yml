@@ -38,9 +38,7 @@ jobs:
 
       - name: Install Wails CLI
         shell: bash
-        run: |
-          WAILS_VERSION="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
-          go install "github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}"
+        run: bash scripts/install-wails-cli.sh
 
       - name: Sync generated metadata
         shell: bash
