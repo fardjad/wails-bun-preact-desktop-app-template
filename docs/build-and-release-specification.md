@@ -469,10 +469,11 @@ Desired outputs:
 
 Linux release packaging in this repo should produce AppImages. The AppImage
 packaging configuration lives under `build/linux/appimage/`, the application
-icon source is `build/appicon.png`, and the AppImage packaging step is
-`wails3 task linux:create:appimage`. Because Linux desktop builds use CGO,
-native `amd64` and native `arm64` Linux runners are the cleanest fit for
-producing those artifacts.
+icon source is `build/appicon.png`, and the final AppImage should be assembled
+in a Debian Trixie container with `appimagetool` rather than relying on Wails'
+current AppImage bundling path. Because Linux desktop builds use CGO, native
+`amd64` and native `arm64` Linux runners are the cleanest fit for producing
+those artifacts.
 
 Desired outputs:
 
@@ -496,18 +497,20 @@ Desired outputs:
 5. Build the Linux amd64 app in release mode. The AppImage package step needs a
    release-ready Linux executable and app metadata.
 
-6. Make sure AppImage packaging assets exist in `build/linux/appimage/`. Wails
-   reads AppImage-specific packaging config from that directory.
+6. Generate the Linux desktop entry and stage the release binary for packaging.
 
-7. Run the Wails AppImage packaging task. This produces the final AppImage
-   artifact.
+7. Run the repo-managed Linux AppImage packaging helper inside a Debian Trixie
+   container. That helper should resize the app icon to an AppImage-compatible
+   size, create a minimal AppDir, and invoke `appimagetool` to produce the final
+   AppImage artifact without rebundling the host GTK/WebKit library stack.
 
 8. Mark the resulting AppImage executable if needed. AppImages may need
    `chmod +x <name>.AppImage` before direct execution.
 
-9. Validate Linux runtime dependencies if startup fails. Linux desktop runtime
-   issues can still come from missing WebKit runtime packages such as
-   `libwebkit2gtk-4.1-0` on Debian/Ubuntu systems.
+9. Validate Linux runtime dependencies if startup fails. This packaging path
+   intentionally relies on the target Linux system to provide GTK/WebKit runtime
+   libraries, so missing packages such as `libwebkit2gtk-4.1-0` on Debian/Ubuntu
+   systems can still prevent startup.
 
 10. Name the artifact using the standard release pattern. The Linux amd64
     release asset should follow `<slug>-linux-amd64-<version>.AppImage`.
@@ -530,11 +533,12 @@ Desired outputs:
    Native arm64 is the cleaner path for this repo because Linux desktop
    packaging depends on CGO-linked native libraries.
 
-6. Make sure AppImage packaging assets exist in `build/linux/appimage/`. Wails
-   reads AppImage-specific packaging config from that directory.
+6. Generate the Linux desktop entry and stage the release binary for packaging.
 
-7. Run the Wails AppImage packaging task. This produces the final AppImage
-   artifact.
+7. Run the repo-managed Linux AppImage packaging helper inside a Debian Trixie
+   container. That helper should resize the app icon to an AppImage-compatible
+   size, create a minimal AppDir, and invoke `appimagetool` to produce the final
+   AppImage artifact without rebundling the host GTK/WebKit library stack.
 
 8. Mark the resulting AppImage executable if needed. AppImages may need
    `chmod +x <name>.AppImage` before direct execution.

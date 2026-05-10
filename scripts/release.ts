@@ -4,7 +4,6 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import {
   adHocSignMacOSApp,
-  binaryOutputPath,
   buildFrontendBundle,
   cleanupWindowsSyso,
   createMacOSAppBundle,
@@ -14,9 +13,7 @@ import {
   generateLinuxDesktopEntry,
   generatePlatformIcons,
   generateWindowsSyso,
-  getWailsCliPath,
   runGoBuild,
-  withLinuxPkgConfigEnv,
   writeChecksumFile,
   zipMacOSApp,
 } from "./common";
@@ -27,9 +24,7 @@ import {
   buildDarwinDir,
   ensureDirectory,
   GoArch,
-  linuxAppImageDir,
   loadProjectConfig,
-  pathExists,
   releaseDir,
   repoRoot,
 } from "./common";
@@ -107,38 +102,16 @@ async function releaseLinux(
     targetArch,
     config.info.version,
   );
-  const tempOutputDir = path.join(releaseDir, "tmp", `linux-${targetArch}`);
   const finalArtifactPath = path.join(releaseDir, `${artifactBase}.AppImage`);
   const tempBinaryPath = path.join(
     buildBinDir,
     `${config.slug}-linux-${targetArch}`,
   );
-  const stagingBinaryName = config.slug;
-  const stagingIconName = `${config.slug}.png`;
-  const stagingDesktopName = `${config.slug}.desktop`;
-  const stagingBinaryPath = path.join(linuxAppImageDir, stagingBinaryName);
-  const stagingIconPath = path.join(linuxAppImageDir, stagingIconName);
-  const stagingDesktopPath = path.join(linuxAppImageDir, stagingDesktopName);
-  const buildScriptPath = path.join(linuxAppImageDir, "build.sh");
-  const relativeOutputDir = path.relative(linuxAppImageDir, tempOutputDir);
-  const appImageBuildDir = path.join(linuxAppImageDir, "build");
-
-  if (!(await pathExists(buildScriptPath))) {
-    throw new Error(
-      `Missing AppImage build helper at ${buildScriptPath}. Run \`bun run sync-app-config\` first.`,
-    );
-  }
 
   await ensureFrontendDependencies();
   await generateBindings("release");
   await buildFrontendBundle();
   const desktopFilePath = await generateLinuxDesktopEntry(config);
-  const desktopFileContents = await Bun.file(desktopFilePath).text();
-  const appImageDesktopContents = desktopFileContents.replace(
-    /^Name=.*$/m,
-    `Name=${config.slug}`,
-  );
-  await ensureDirectory(tempOutputDir);
   await runGoBuild(
     config,
     { os: "linux", arch: targetArch },
@@ -146,35 +119,33 @@ async function releaseLinux(
     tempBinaryPath,
   );
 
-  await Bun.write(stagingBinaryPath, Bun.file(tempBinaryPath));
-  await Bun.write(stagingIconPath, Bun.file(buildAppIconPath));
-  await Bun.write(stagingDesktopPath, appImageDesktopContents);
-  const wailsCliPath = await getWailsCliPath();
-
-  try {
-    await $`${wailsCliPath} generate appimage -binary ${stagingBinaryName} -icon ${stagingIconName} -desktopfile ${stagingDesktopName} -outputdir ${relativeOutputDir} -builddir ${appImageBuildDir}`
-      .cwd(linuxAppImageDir)
-      .env(withLinuxPkgConfigEnv());
-  } finally {
-    await fs.rm(stagingBinaryPath, { force: true });
-    await fs.rm(stagingIconPath, { force: true });
-    await fs.rm(stagingDesktopPath, { force: true });
+  if (process.platform !== "linux") {
+    throw new Error("Linux release packaging must run on a native Linux host.");
   }
 
-  const tempArtifacts = (await fs.readdir(tempOutputDir))
-    .filter((fileName) => fileName.endsWith(".AppImage"))
-    .map((fileName) => path.join(tempOutputDir, fileName));
+  const packageScriptPath = path.join(
+    repoRoot,
+    "scripts",
+    "package-linux-appimage.sh",
+  );
+  const containerPath = (localPath: string) =>
+    path.posix.join(
+      "/app",
+      path.relative(repoRoot, localPath).split(path.sep).join(path.posix.sep),
+    );
 
-  if (tempArtifacts.length !== 1) {
+  if (!(await Bun.file(packageScriptPath).exists())) {
     throw new Error(
-      `Expected exactly one AppImage in ${tempOutputDir}, found ${tempArtifacts.length}.`,
+      `Missing Linux AppImage packaging helper at ${packageScriptPath}.`,
     );
   }
 
   await fs.rm(finalArtifactPath, { force: true });
-  await fs.rename(tempArtifacts[0], finalArtifactPath);
-  await fs.chmod(finalArtifactPath, 0o755);
-  await fs.rm(tempOutputDir, { force: true, recursive: true });
+  await $`docker run --rm -v ${repoRoot}:/app -w /app golang:trixie bash ${containerPath(
+    packageScriptPath,
+  )} ${config.slug} ${containerPath(tempBinaryPath)} ${containerPath(
+    desktopFilePath,
+  )} ${containerPath(buildAppIconPath)} ${containerPath(finalArtifactPath)}`;
   await writeChecksumFile(finalArtifactPath);
 }
 

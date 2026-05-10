@@ -120,10 +120,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
-            libfuse2t64 \
             libgtk-3-dev \
             libwebkit2gtk-4.1-dev \
-            patchelf \
             pkg-config
 
       - name: Install Wails CLI
