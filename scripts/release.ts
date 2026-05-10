@@ -120,6 +120,8 @@ async function releaseLinux(
   const stagingIconPath = path.join(linuxAppImageDir, stagingIconName);
   const stagingDesktopPath = path.join(linuxAppImageDir, stagingDesktopName);
   const buildScriptPath = path.join(linuxAppImageDir, "build.sh");
+  const relativeOutputDir = path.relative(linuxAppImageDir, tempOutputDir);
+  const appImageBuildDir = path.join(linuxAppImageDir, "build");
 
   if (!(await pathExists(buildScriptPath))) {
     throw new Error(
@@ -131,6 +133,11 @@ async function releaseLinux(
   await generateBindings("release");
   await buildFrontendBundle();
   const desktopFilePath = await generateLinuxDesktopEntry(config);
+  const desktopFileContents = await Bun.file(desktopFilePath).text();
+  const appImageDesktopContents = desktopFileContents.replace(
+    /^Name=.*$/m,
+    `Name=${config.slug}`,
+  );
   await ensureDirectory(tempOutputDir);
   await runGoBuild(
     config,
@@ -141,11 +148,11 @@ async function releaseLinux(
 
   await Bun.write(stagingBinaryPath, Bun.file(tempBinaryPath));
   await Bun.write(stagingIconPath, Bun.file(buildAppIconPath));
-  await Bun.write(stagingDesktopPath, Bun.file(desktopFilePath));
+  await Bun.write(stagingDesktopPath, appImageDesktopContents);
   const wailsCliPath = await getWailsCliPath();
 
   try {
-    await $`${wailsCliPath} generate appimage -binary ${stagingBinaryName} -icon ${stagingIconName} -desktopfile ${stagingDesktopName} -outputdir ${tempOutputDir} -builddir ${path.join(linuxAppImageDir, "build")}`
+    await $`${wailsCliPath} generate appimage -binary ${stagingBinaryName} -icon ${stagingIconName} -desktopfile ${stagingDesktopName} -outputdir ${relativeOutputDir} -builddir ${appImageBuildDir}`
       .cwd(linuxAppImageDir)
       .env(withLinuxPkgConfigEnv());
   } finally {
