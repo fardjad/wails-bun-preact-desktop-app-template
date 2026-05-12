@@ -1,10 +1,10 @@
 {
   "fixed": {
-    "file_version": "0.2.22"
+    "file_version": "0.2.23"
   },
   "info": {
     "0000": {
-      "ProductVersion": "0.2.22",
+      "ProductVersion": "0.2.23",
       "CompanyName": "Fardjad Davari",
       "FileDescription": "A cross-platform desktop application built with Wails, Bun, and Preact.",
       "LegalCopyright": "(c) 2026, Fardjad Davari",
