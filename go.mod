@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.91
-	turso.tech/database/tursogo v0.5.3
+	turso.tech/database/tursogo v0.6.0
 )
 
 require (
@@ -40,7 +40,7 @@ require (
 	github.com/samber/lo v1.53.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
-	github.com/tursodatabase/turso-go-platform-libs v0.5.3 // indirect
+	github.com/tursodatabase/turso-go-platform-libs v0.6.0 // indirect
 	github.com/wailsapp/wails/webview2 v1.0.24 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
