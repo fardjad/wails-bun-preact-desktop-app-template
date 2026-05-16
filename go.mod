@@ -3,7 +3,7 @@ module cross-platform-desktop-app-template
 go 1.26.3
 
 require (
-	github.com/wailsapp/wails/v3 v3.0.0-alpha.91
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.92
 	turso.tech/database/tursogo v0.6.0
 )
 
