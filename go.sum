@@ -109,8 +109,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/tursodatabase/turso-go-platform-libs v0.6.0 h1:/kYWbwsNhYQMIg22mkq88N4U6swYSVqvRPMUOTZZrYM=
 github.com/tursodatabase/turso-go-platform-libs v0.6.0/go.mod h1:bo+Lpv5OYOX1gRV9L5DLKMsYxmDs56SkZwnCOLEFcxU=
-github.com/wailsapp/wails/v3 v3.0.0-alpha.91 h1:hNbysesX5Q+d9+CkDjgTmt1rHDFp5vCDT6UqrE0fFfg=
-github.com/wailsapp/wails/v3 v3.0.0-alpha.91/go.mod h1:5exzAEkyvbCcdowFevzZf23SYEEvmf+pkx7gg1gOR0Q=
+github.com/wailsapp/wails/v3 v3.0.0-alpha.92 h1:LYVe5RcGDB/x1QTWE0JbonXZc7+BmCtjb3+mHa1riao=
+github.com/wailsapp/wails/v3 v3.0.0-alpha.92/go.mod h1:4cKvtUppwqYC9tVtvgHWzEmXfUnuLEV3q8d0Jh6xkQQ=
 github.com/wailsapp/wails/webview2 v1.0.24 h1:uULnjCSaRfMlU84mS3kjLgPsRosEOIusVK1nFOHZHzs=
 github.com/wailsapp/wails/webview2 v1.0.24/go.mod h1:sdf+s0nAdxlzVWf9SCxC15XaxnQPJeY+uU1Ucn3jHQM=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
